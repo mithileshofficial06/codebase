@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-node_modules
+node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -31,7 +31,7 @@ yarn-error.log*
 .env.production.local
 
 # turborepo
-.turbo
+.turbo/
 
 # vercel
 .vercel
@@ -41,4 +41,17 @@ yarn-error.log*
 next-env.d.ts
 
 # build output
-dist
+dist/
+
+# nested git repositories
+codemap/
+
+# cache
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
