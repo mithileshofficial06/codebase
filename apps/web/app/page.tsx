@@ -56,7 +56,7 @@ function StickyNav() {
 /* ═══ Terminal ═══ */
 function TerminalPreview() {
   const [lines, setLines] = useState<string[]>([]);
-  const allLines = [
+  const terminalLines = useRef([
     '$ codemap analyze vercel/next.js',
     '',
     '  ⏳ Cloning repository...',
@@ -66,17 +66,30 @@ function TerminalPreview() {
     '  ✓ AI analysis ready',
     '',
     '  → Open dashboard: localhost:3000/analyze',
-  ];
+  ]);
 
   useEffect(() => {
-    let i = 0;
+    let idx = 0;
     const interval = setInterval(() => {
-      if (i < allLines.length) { setLines(prev => [...prev, allLines[i]]); i++; }
-      else clearInterval(interval);
+      if (idx < terminalLines.current.length) {
+        const line = terminalLines.current[idx];
+        setLines(prev => [...prev, line]);
+        idx++;
+      } else {
+        clearInterval(interval);
+      }
     }, 300);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const getColor = (line: string) => {
+    if (!line) return '#94A3B8';
+    if (line.includes('✓')) return '#34d399';
+    if (line.includes('⏳')) return '#fbbf24';
+    if (line.includes('$')) return '#A855F7';
+    if (line.includes('→')) return '#00D9FF';
+    return '#94A3B8';
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 20, rotateX: 5 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -89,7 +102,7 @@ function TerminalPreview() {
       </div>
       <div className="terminal-body">
         {lines.map((line, i) => (
-          <div key={i} style={{ color: line.includes('✓') ? '#34d399' : line.includes('⏳') ? '#fbbf24' : line.includes('$') ? '#A855F7' : line.includes('→') ? '#00D9FF' : '#94A3B8', minHeight: '1.2em' }}>
+          <div key={i} style={{ color: getColor(line), minHeight: '1.2em' }}>
             {line}
           </div>
         ))}
