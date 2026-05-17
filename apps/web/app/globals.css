@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design Tokens ─────────────────────────────────────────────── */
+
+:root {
+  --bg: #080808;
+  --bg-panel: #0f0f0f;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #666666;
+  --text-dim: #444444;
+  --text-ghost: #333333;
+  --accent-blue: #3b82f6;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-amber: #f59e0b;
+  --aurora-indigo: #1a0533;
+  --aurora-blue: #0a1628;
+  --aurora-teal: #041f1e;
+  --border-faint: rgba(255, 255, 255, 0.04);
+  --font-sans: var(--font-geist-sans, 'Inter', system-ui, -apple-system, sans-serif);
+  --font-mono: var(--font-geist-mono, 'JetBrains Mono', 'Fira Code', 'Consolas', monospace);
+}
+
+/* ─── Base ──────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ─── Custom Scrollbar ──────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444444;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #333333 #1a1a1a;
+}
+
+/* ─── SVG Grain Filter ──────────────────────────────────────────── */
+
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.08;
+}
+
+.grain-overlay svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ─── Aurora Blob ───────────────────────────────────────────────── */
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* ─── Glow Underline ────────────────────────────────────────────── */
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--accent-blue), 0 0 20px rgba(59, 130, 246, 0.3);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 14px var(--accent-blue), 0 0 35px rgba(59, 130, 246, 0.5);
+    opacity: 1;
+  }
+}
+
+.glow-line {
+  height: 1px;
+  background: var(--accent-blue);
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Shimmer ───────────────────────────────────────────────────── */
+
+@keyframes shimmer-sweep {
+  0% {
+    mask-position: -200% 0;
+    -webkit-mask-position: -200% 0;
+  }
+  100% {
+    mask-position: 200% 0;
+    -webkit-mask-position: 200% 0;
+  }
+}
+
+/* ─── React Flow Overrides ──────────────────────────────────────── */
+
+.react-flow__background {
+  background-color: var(--bg) !important;
+}
+
+.react-flow__minimap {
+  background-color: var(--bg-panel) !important;
+  border: 1px solid var(--border-faint) !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__controls {
+  border: 1px solid var(--border-faint) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: var(--bg-panel) !important;
+  border-bottom: 1px solid var(--border-faint) !important;
+  fill: var(--text-tertiary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #1a1a1a !important;
+}

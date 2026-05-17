@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd ../.. && npx turbo run build --filter=@codemap/web",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "installCommand": "cd ../.. && npm install",
+  "rewrites": [
+    {
+      "source": "/api/backend/:path*",
+      "destination": "${API_URL}/:path*"
+    }
+  ]
+}
