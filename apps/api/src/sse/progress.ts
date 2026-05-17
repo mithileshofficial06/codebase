@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { SSEProgressEvent, SSEStepId } from '@codemap/shared';
 
 export class ProgressEmitter {
-  private heartbeatInterval: NodeJS.Timer | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(private res: Response) {
     // Set SSE headers
