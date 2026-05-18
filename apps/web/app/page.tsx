@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Link2, Map, MessageCircle, Zap, Shield, BarChart3, ArrowRight } from 'lucide-react';
-import AuroraBackground from '@/components/landing/AuroraBackground';
+
 
 type PageState = 'landing' | 'transitioning';
 
@@ -221,7 +221,7 @@ export default function Home() {
 
   return (
     <>
-      <AuroraBackground />
+
       <StickyNav />
       <main className="relative z-10 w-full overflow-hidden" style={{ paddingTop: 64 }}>
 
