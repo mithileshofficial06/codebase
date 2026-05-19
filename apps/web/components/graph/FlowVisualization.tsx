@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useReactFlow } from 'reactflow';
 import { useFlowStore } from '@/store/flowStore';
 import { useGraphStore } from '@/store/graphStore';
+import { SystemTypeIcon } from '@/components/ui/Icons';
 
 /**
  * Flow Visualization System
@@ -72,8 +73,9 @@ export function FlowVisualization() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 pointer-events-none z-10"
-        style={{ backdropFilter: 'blur(2px)' }}
+        transition={{ duration: 0.4 }}
+        className="fixed inset-0 bg-black/60 pointer-events-none z-10"
+        style={{ backdropFilter: 'blur(3px)' }}
       />
 
       {/* Step indicator */}
@@ -81,46 +83,47 @@ export function FlowVisualization() {
         {currentStep && (
           <motion.div
             key={currentStep.nodeId}
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            initial={{ opacity: 0, y: 30, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: -30, scale: 0.92 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-2xl"
           >
-            <div className="bg-[#0d0d0d]/95 backdrop-blur-xl border border-[#1f1f1f] rounded-xl shadow-2xl p-4">
+            <div className="bg-[#0d0d0d]/98 backdrop-blur-2xl border border-[#1f1f1f] rounded-2xl shadow-2xl p-5">
               <div className="flex items-start gap-4">
                 {/* Step number */}
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-[#f59e0b] to-[#ef4444] flex items-center justify-center text-white font-bold">
+                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#ef4444] flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-[#f59e0b]/20">
                   {currentStepIndex + 1}
                 </div>
 
                 {/* Step info */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-white font-semibold">{currentStep.nodeLabel}</h4>
-                    <span className="px-2 py-0.5 bg-[#1a1a1a] border border-[#333] rounded text-xs text-[#888]">
-                      {currentStep.systemType}
-                    </span>
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <h4 className="text-white font-semibold text-base">{currentStep.nodeLabel}</h4>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#1a1a1a] border border-[#333] rounded-lg">
+                      <SystemTypeIcon type={currentStep.systemType} />
+                      <span className="text-xs text-[#888] font-medium">{currentStep.systemType}</span>
+                    </div>
                   </div>
-                  <p className="text-[#aaa] text-sm mb-2">{currentStep.description}</p>
+                  <p className="text-[#aaa] text-sm mb-2.5 leading-relaxed">{currentStep.description}</p>
                   <p className="text-[#666] text-xs font-mono truncate">{currentStep.nodePath}</p>
                 </div>
 
                 {/* Pulse animation */}
-                <div className="flex-shrink-0 relative w-8 h-8">
+                <div className="flex-shrink-0 relative w-10 h-10">
                   <motion.div
                     className="absolute inset-0 rounded-full bg-[#f59e0b]"
                     animate={{
-                      scale: [1, 1.5, 1],
-                      opacity: [0.6, 0, 0.6],
+                      scale: [1, 1.8, 1],
+                      opacity: [0.5, 0, 0.5],
                     }}
                     transition={{
-                      duration: 2,
+                      duration: 2.5,
                       repeat: Infinity,
                       ease: 'easeOut',
                     }}
                   />
-                  <div className="absolute inset-0 rounded-full bg-[#f59e0b] opacity-80" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#f59e0b] to-[#ef4444] opacity-90 shadow-lg shadow-[#f59e0b]/30" />
                 </div>
               </div>
             </div>
@@ -133,27 +136,40 @@ export function FlowVisualization() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-96"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[28rem]"
       >
-        <div className="bg-[#0d0d0d]/95 backdrop-blur-xl border border-[#1f1f1f] rounded-full px-4 py-2 shadow-2xl">
-          <div className="flex items-center gap-3">
-            <span className="text-[#888] text-xs font-medium whitespace-nowrap">
+        <div className="bg-[#0d0d0d]/98 backdrop-blur-2xl border border-[#1f1f1f] rounded-full px-5 py-2.5 shadow-2xl">
+          <div className="flex items-center gap-3.5">
+            <span className="text-[#888] text-xs font-semibold whitespace-nowrap tabular-nums">
               {currentStepIndex + 1}/{activeFlow.steps.length}
             </span>
-            <div className="flex-1 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-[#1a1a1a] rounded-full overflow-hidden border border-[#1f1f1f]">
               <motion.div
-                className="h-full bg-gradient-to-r from-[#f59e0b] via-[#f97316] to-[#ef4444]"
+                className="h-full bg-gradient-to-r from-[#f59e0b] via-[#f97316] to-[#ef4444] relative"
                 initial={{ width: 0 }}
                 animate={{ width: `${((currentStepIndex + 1) / activeFlow.steps.length) * 100}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-              />
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {/* Animated shimmer */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+              </motion.div>
             </div>
-            <span className="text-[#888] text-xs font-medium">
+            <span className="text-[#888] text-xs font-semibold tabular-nums">
               {Math.round(((currentStepIndex + 1) / activeFlow.steps.length) * 100)}%
             </span>
           </div>
         </div>
       </motion.div>
+
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
     </>
   );
 }

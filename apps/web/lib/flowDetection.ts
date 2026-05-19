@@ -34,7 +34,7 @@ const FLOW_PATTERNS = [
     id: 'auth-flow',
     name: 'Authentication Flow',
     description: 'User authentication and session management',
-    icon: '🔐',
+    icon: 'Authentication',
     category: 'authentication' as const,
     entryPatterns: [/login|signin|auth/i],
     pathPatterns: [
@@ -48,7 +48,7 @@ const FLOW_PATTERNS = [
     id: 'api-request-flow',
     name: 'API Request Flow',
     description: 'Standard API request processing',
-    icon: '⚡',
+    icon: 'ApiRequest',
     category: 'api' as const,
     entryPatterns: [/api|route|endpoint/i],
     pathPatterns: [
@@ -62,7 +62,7 @@ const FLOW_PATTERNS = [
     id: 'registration-flow',
     name: 'User Registration Flow',
     description: 'New user account creation',
-    icon: '📝',
+    icon: 'Registration',
     category: 'authentication' as const,
     entryPatterns: [/register|signup|create.*account/i],
     pathPatterns: [
@@ -77,7 +77,7 @@ const FLOW_PATTERNS = [
     id: 'data-query-flow',
     name: 'Database Query Flow',
     description: 'Data retrieval and processing',
-    icon: '💾',
+    icon: 'Database',
     category: 'data' as const,
     entryPatterns: [/query|fetch|get|find/i],
     pathPatterns: [
@@ -90,7 +90,7 @@ const FLOW_PATTERNS = [
     id: 'ui-render-flow',
     name: 'UI Render Flow',
     description: 'Component rendering and data display',
-    icon: '🎨',
+    icon: 'UiRender',
     category: 'ui' as const,
     entryPatterns: [/page|component|view|screen/i],
     pathPatterns: [

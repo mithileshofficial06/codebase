@@ -146,6 +146,7 @@ function CustomNodeComponent({ id, data, selected }: any) {
             height: radius * 2,
             borderRadius: '50%',
             backgroundColor: extColor,
+            position: 'relative',
             boxShadow: isCurrentStep
               ? `0 0 30px 10px ${extColor}, ${TYPE_GLOW[nodeType]}`
               : isFocused
@@ -162,7 +163,34 @@ function CustomNodeComponent({ id, data, selected }: any) {
               : `1px solid ${extColor}80`,
             transition: 'box-shadow 400ms ease, border 400ms ease',
           }}
-        />
+        >
+          {/* Glass texture overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+          
+          {/* Inner highlight */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '15%',
+              left: '20%',
+              width: '40%',
+              height: '40%',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
+              pointerEvents: 'none',
+              opacity: isHovered || selected || isFocused ? 0.8 : 0.4,
+              transition: 'opacity 400ms ease',
+            }}
+          />
+        </div>
 
         {/* Hotspot pulsing ring */}
         {nodeType === 'hotspot' && (
@@ -182,21 +210,23 @@ function CustomNodeComponent({ id, data, selected }: any) {
       {/* Label — always visible */}
       <div
         style={{
-          marginTop: 4,
-          fontFamily: 'var(--font-code, "Geist Mono", monospace)',
+          marginTop: 6,
+          fontFamily: '"Geist Mono", "SF Mono", "Monaco", "Cascadia Code", monospace',
           fontSize: 10,
           fontWeight: 500,
-          color: selected ? '#ffffff' : isHovered ? '#e0e0e0' : '#aaaaaa',
-          backgroundColor: 'rgba(8,8,8,0.85)',
-          padding: '1px 5px',
-          borderRadius: 3,
+          color: selected ? '#ffffff' : isHovered ? '#e5e5e5' : '#b3b3b3',
+          backgroundColor: 'rgba(8,8,8,0.92)',
+          backdropFilter: 'blur(8px)',
+          padding: '2px 6px',
+          borderRadius: 4,
           maxWidth: 120,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
-          transition: 'color 150ms ease',
-          letterSpacing: '-0.01em',
+          transition: 'color 200ms ease, background-color 200ms ease',
+          letterSpacing: '-0.02em',
+          border: selected ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.05)',
         }}
         title={data.path || data.label}
       >
@@ -207,18 +237,20 @@ function CustomNodeComponent({ id, data, selected }: any) {
       {isHovered && data.folder && data.folder !== '_root' && (
         <div
           style={{
-            marginTop: 1,
+            marginTop: 2,
             fontSize: 8,
-            color: '#666',
-            fontFamily: 'var(--font-code, monospace)',
-            backgroundColor: 'rgba(8,8,8,0.9)',
-            padding: '0 4px',
-            borderRadius: 2,
+            color: '#777',
+            fontFamily: '"Geist Mono", "SF Mono", "Monaco", monospace',
+            backgroundColor: 'rgba(8,8,8,0.95)',
+            backdropFilter: 'blur(8px)',
+            padding: '1px 5px',
+            borderRadius: 3,
             maxWidth: 140,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
+            letterSpacing: '-0.01em',
           }}
         >
           {data.folder}

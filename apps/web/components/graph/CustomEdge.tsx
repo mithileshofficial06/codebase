@@ -108,14 +108,24 @@ function CustomEdgeComponent({
 
       {/* Glow path for cluster edges and current flow edge */}
       {(isClusterEdge || isCurrentFlowEdge) && (
-        <path
-          d={edgePath}
-          fill="none"
-          stroke={`url(#${gradientId})`}
-          strokeWidth={baseWidth + (isCurrentFlowEdge ? 8 : 4)}
-          opacity={isCurrentFlowEdge ? 0.3 : 0.1}
-          style={{ filter: 'blur(3px)' }}
-        />
+        <>
+          <path
+            d={edgePath}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={baseWidth + (isCurrentFlowEdge ? 10 : 6)}
+            opacity={isCurrentFlowEdge ? 0.15 : 0.08}
+            style={{ filter: 'blur(6px)' }}
+          />
+          <path
+            d={edgePath}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={baseWidth + (isCurrentFlowEdge ? 6 : 3)}
+            opacity={isCurrentFlowEdge ? 0.25 : 0.12}
+            style={{ filter: 'blur(3px)' }}
+          />
+        </>
       )}
 
       {/* Visible edge path */}
@@ -133,17 +143,26 @@ function CustomEdgeComponent({
       {/* Flowing particles */}
       {showParticles && (
         <>
-          <circle r={isCurrentFlowEdge ? 4 : isClusterEdge ? 3.5 : 2.5} fill={sourceColor} opacity={isCurrentFlowEdge ? 1 : 0.9}>
-            <animateMotion dur={isCurrentFlowEdge ? '1.5s' : isClusterEdge ? '2s' : '1s'} repeatCount="indefinite">
+          <circle r={isCurrentFlowEdge ? 4.5 : isClusterEdge ? 3.5 : 2.5} fill={sourceColor} opacity={isCurrentFlowEdge ? 1 : 0.9}>
+            <animateMotion dur={isCurrentFlowEdge ? '1.2s' : isClusterEdge ? '2s' : '1s'} repeatCount="indefinite">
               <mpath href={`#${pathId}`} />
             </animateMotion>
           </circle>
           {(isClusterEdge || isCurrentFlowEdge) && (
-            <circle r={isCurrentFlowEdge ? 3 : 2.5} fill={targetColor} opacity={0.6}>
-              <animateMotion dur={isCurrentFlowEdge ? '1.5s' : '2s'} begin={isCurrentFlowEdge ? '0.5s' : '1s'} repeatCount="indefinite">
-                <mpath href={`#${pathId}`} />
-              </animateMotion>
-            </circle>
+            <>
+              <circle r={isCurrentFlowEdge ? 3.5 : 2.5} fill={targetColor} opacity={0.7}>
+                <animateMotion dur={isCurrentFlowEdge ? '1.2s' : '2s'} begin={isCurrentFlowEdge ? '0.4s' : '1s'} repeatCount="indefinite">
+                  <mpath href={`#${pathId}`} />
+                </animateMotion>
+              </circle>
+              {isCurrentFlowEdge && (
+                <circle r={2.5} fill={sourceColor} opacity={0.5}>
+                  <animateMotion dur="1.2s" begin="0.8s" repeatCount="indefinite">
+                    <mpath href={`#${pathId}`} />
+                  </animateMotion>
+                </circle>
+              )}
+            </>
           )}
         </>
       )}

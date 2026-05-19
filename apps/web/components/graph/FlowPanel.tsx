@@ -1,9 +1,10 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, ChevronRight, Zap, X } from 'lucide-react';
+import { ChevronRight, Zap, X } from 'lucide-react';
 import { useFlowStore } from '@/store/flowStore';
 import { DetectedFlow } from '@/lib/flowDetection';
+import { FlowIcons, ComplexityIndicator, RiskIndicator, PlaybackIcons } from '@/components/ui/Icons';
 
 /**
  * Flow Panel - Flow selection and playback controls
@@ -49,18 +50,20 @@ export function FlowPanel() {
       initial={{ opacity: 0, x: 400 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 400 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="fixed right-6 top-20 bottom-6 z-40 w-96 bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl shadow-2xl flex flex-col overflow-hidden"
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed right-6 top-20 bottom-6 z-40 w-96 bg-[#0d0d0d]/95 backdrop-blur-2xl border border-[#1f1f1f] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#1f1f1f]">
-        <div className="flex items-center gap-2">
-          <Zap size={18} className="text-[#f59e0b]" />
-          <h3 className="text-white font-semibold">Flow Explorer</h3>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f1f1f] bg-[#0a0a0a]/50">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#f59e0b] to-[#ef4444] flex items-center justify-center">
+            <Zap size={16} className="text-white" />
+          </div>
+          <h3 className="text-white font-semibold text-base">Flow Explorer</h3>
         </div>
         <button
           onClick={toggleFlowPanel}
-          className="text-[#666] hover:text-white transition-colors"
+          className="text-[#666] hover:text-white hover:bg-[#1a1a1a] p-1.5 rounded-lg transition-all"
         >
           <X size={18} />
         </button>
@@ -68,14 +71,20 @@ export function FlowPanel() {
 
       {/* Active Flow Playback */}
       {activeFlow && (
-        <div className="px-4 py-3 border-b border-[#1f1f1f] bg-[#0a0a0a]">
-          <div className="flex items-start justify-between mb-3">
+        <div className="px-5 py-4 border-b border-[#1f1f1f] bg-gradient-to-b from-[#0a0a0a]/80 to-[#0d0d0d]/50">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">{activeFlow.icon}</span>
-                <h4 className="text-white font-medium text-sm">{activeFlow.name}</h4>
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="flex-shrink-0">
+                  {activeFlow.icon === 'Authentication' && <FlowIcons.Authentication />}
+                  {activeFlow.icon === 'ApiRequest' && <FlowIcons.ApiRequest />}
+                  {activeFlow.icon === 'Registration' && <FlowIcons.Registration />}
+                  {activeFlow.icon === 'Database' && <FlowIcons.Database />}
+                  {activeFlow.icon === 'UiRender' && <FlowIcons.UiRender />}
+                </div>
+                <h4 className="text-white font-semibold text-sm">{activeFlow.name}</h4>
               </div>
-              <p className="text-[#888] text-xs">{activeFlow.description}</p>
+              <p className="text-[#888] text-xs leading-relaxed">{activeFlow.description}</p>
             </div>
           </div>
 
@@ -86,7 +95,7 @@ export function FlowPanel() {
                 onClick={startPlayback}
                 className="flex items-center gap-2 px-3 py-1.5 bg-[#f59e0b] hover:bg-[#f59e0b]/90 text-black rounded-lg text-sm font-medium transition-colors"
               >
-                <Play size={14} fill="currentColor" />
+                <PlaybackIcons.Play className="w-3.5 h-3.5" />
                 {playbackState === 'completed' ? 'Replay' : 'Play'}
               </button>
             ) : playbackState === 'playing' ? (
@@ -94,7 +103,7 @@ export function FlowPanel() {
                 onClick={pausePlayback}
                 className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-white rounded-lg text-sm font-medium transition-colors"
               >
-                <Pause size={14} />
+                <PlaybackIcons.Pause className="w-3.5 h-3.5" />
                 Pause
               </button>
             ) : (
@@ -102,7 +111,7 @@ export function FlowPanel() {
                 onClick={resumePlayback}
                 className="flex items-center gap-2 px-3 py-1.5 bg-[#f59e0b] hover:bg-[#f59e0b]/90 text-black rounded-lg text-sm font-medium transition-colors"
               >
-                <Play size={14} fill="currentColor" />
+                <PlaybackIcons.Play className="w-3.5 h-3.5" />
                 Resume
               </button>
             )}
@@ -112,7 +121,7 @@ export function FlowPanel() {
               className="p-1.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-white rounded-lg transition-colors"
               title="Reset"
             >
-              <RotateCcw size={14} />
+              <PlaybackIcons.Reset className="w-3.5 h-3.5" />
             </button>
 
             {/* Speed Control */}
@@ -130,29 +139,33 @@ export function FlowPanel() {
             {/* Auto-follow toggle */}
             <button
               onClick={toggleAutoFollow}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
+              className={`p-1.5 rounded-lg transition-colors ${
                 autoFollowCamera
                   ? 'bg-[#f59e0b]/20 border border-[#f59e0b]/50 text-[#f59e0b]'
                   : 'bg-[#1a1a1a] border border-[#333] text-[#666]'
               }`}
               title="Auto-follow camera"
             >
-              📹
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="2" y="4" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                <path d="M12 6l2 1.5-2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="7" cy="7.5" r="1.5" fill="currentColor" />
+              </svg>
             </button>
           </div>
 
           {/* Progress */}
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-[#888] mb-1">
-              <span>Step {currentStepIndex + 1} of {activeFlow.steps.length}</span>
-              <span>{Math.round(((currentStepIndex + 1) / activeFlow.steps.length) * 100)}%</span>
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="text-[#888] font-medium">Step {currentStepIndex + 1} of {activeFlow.steps.length}</span>
+              <span className="text-[#666] font-mono">{Math.round(((currentStepIndex + 1) / activeFlow.steps.length) * 100)}%</span>
             </div>
-            <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden border border-[#1f1f1f]">
               <motion.div
-                className="h-full bg-gradient-to-r from-[#f59e0b] to-[#ef4444]"
+                className="h-full bg-gradient-to-r from-[#f59e0b] via-[#f97316] to-[#ef4444]"
                 initial={{ width: 0 }}
                 animate={{ width: `${((currentStepIndex + 1) / activeFlow.steps.length) * 100}%` }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               />
             </div>
           </div>
@@ -162,13 +175,15 @@ export function FlowPanel() {
       {/* Flow List */}
       <div className="flex-1 overflow-y-auto">
         {detectedFlows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[#666]">
-            <Zap size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No flows detected</p>
-            <p className="text-xs mt-1">Analyzing repository structure...</p>
+          <div className="px-5 py-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#1a1a1a] border border-[#1f1f1f] flex items-center justify-center">
+              <Zap size={28} className="text-[#666]" />
+            </div>
+            <p className="text-sm text-[#888] font-medium mb-1">No flows detected</p>
+            <p className="text-xs text-[#666]">Analyzing repository structure...</p>
           </div>
         ) : (
-          <div className="p-3 space-y-2">
+          <div className="p-4 space-y-2.5">
             {detectedFlows.map((flow) => (
               <FlowCard
                 key={flow.id}
@@ -211,38 +226,46 @@ function FlowCard({
   return (
     <motion.button
       onClick={onSelect}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      className={`w-full text-left p-3.5 rounded-xl border transition-all duration-200 ${
         isActive
-          ? 'bg-[#1a1a1a] border-[#f59e0b]/50 shadow-lg'
+          ? 'bg-gradient-to-br from-[#1a1a1a] to-[#151515] border-[#f59e0b]/50 shadow-lg shadow-[#f59e0b]/10'
           : 'bg-[#0a0a0a] border-[#1f1f1f] hover:border-[#333] hover:bg-[#111]'
       }`}
     >
       <div className="flex items-start gap-3">
-        <span className="text-2xl flex-shrink-0">{flow.icon}</span>
+        <div className="flex-shrink-0 mt-0.5">
+          {flow.icon === 'Authentication' && <FlowIcons.Authentication />}
+          {flow.icon === 'ApiRequest' && <FlowIcons.ApiRequest />}
+          {flow.icon === 'Registration' && <FlowIcons.Registration />}
+          {flow.icon === 'Database' && <FlowIcons.Database />}
+          {flow.icon === 'UiRender' && <FlowIcons.UiRender />}
+        </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-white font-medium text-sm mb-1 truncate">
+          <h4 className="text-white font-semibold text-sm mb-1.5 truncate">
             {flow.name}
           </h4>
-          <p className="text-[#888] text-xs mb-2 line-clamp-2">
+          <p className="text-[#888] text-xs mb-3 line-clamp-2 leading-relaxed">
             {flow.description}
           </p>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`px-2 py-0.5 rounded text-xs border ${complexityColors[flow.complexity]}`}>
-              {flow.complexity}
-            </span>
-            <span className="text-[#666] text-xs">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#0d0d0d] border border-[#1f1f1f]">
+              <ComplexityIndicator level={flow.complexity} />
+              <span className="text-[#888] text-xs font-medium">{flow.complexity}</span>
+            </div>
+            <span className="text-[#666] text-xs font-medium">
               {flow.steps.length} steps
             </span>
-            <span className={`text-xs ${riskColors[flow.estimatedRisk]}`}>
-              {flow.estimatedRisk} risk
-            </span>
+            <div className="flex items-center gap-1.5">
+              <RiskIndicator level={flow.estimatedRisk} />
+              <span className="text-[#666] text-xs font-medium">{flow.estimatedRisk}</span>
+            </div>
           </div>
         </div>
         {isActive && (
-          <ChevronRight size={16} className="text-[#f59e0b] flex-shrink-0" />
+          <ChevronRight size={16} className="text-[#f59e0b] flex-shrink-0 mt-1" />
         )}
       </div>
     </motion.button>
