@@ -329,23 +329,61 @@ export default function Home() {
         {/* ═══ HOW IT WORKS ═══ */}
         <section id="how-it-works" className="py-28 px-6">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-14 fade-up">
+            <div className="text-center mb-16 fade-up">
               <div className="section-badge" style={{ margin: '0 auto 1.25rem' }}>How it works</div>
-              <h2 className="text-3xl md:text-4xl tracking-[-0.03em]" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff' }}>Three steps to clarity</h2>
+              <h2 className="text-3xl md:text-4xl tracking-[-0.03em] mb-3" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff' }}>Three steps to clarity</h2>
+              <p style={{ color: '#94A3B8', maxWidth: 420, margin: '0 auto', fontSize: '0.95rem' }}>From URL to full understanding in under 30 seconds.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            <div className="steps-container fade-up" style={{ transitionDelay: '100ms' }}>
               {[
-                { icon: <Link2 size={18} strokeWidth={1.5} />, n: '01', h: 'Paste a URL', p: 'Any public GitHub repository. No install, no signup, no config.' },
-                { icon: <Map size={18} strokeWidth={1.5} />, n: '02', h: 'Explore the map', p: 'Files as nodes, imports as edges. Navigate your codebase visually.' },
-                { icon: <MessageCircle size={18} strokeWidth={1.5} />, n: '03', h: 'Ask anything', p: 'AI-powered chat that references your actual code and dependencies.' },
+                {
+                  n: '01', h: 'Paste a URL', p: 'Any public GitHub repository. No install, no signup, no config.',
+                  color: '#A855F7', bg: 'rgba(168,85,247,0.06)',
+                  icon: (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                  ),
+                },
+                {
+                  n: '02', h: 'Explore the map', p: 'Files as nodes, imports as edges. Navigate your codebase visually.',
+                  color: '#00D9FF', bg: 'rgba(0,217,255,0.06)',
+                  icon: (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D9FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                      <line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" />
+                    </svg>
+                  ),
+                },
+                {
+                  n: '03', h: 'Ask anything', p: 'AI-powered chat that references your actual code and dependencies.',
+                  color: '#f59e0b', bg: 'rgba(245,158,11,0.06)',
+                  icon: (
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      <line x1="9" y1="10" x2="9" y2="10" /><line x1="12" y1="10" x2="12" y2="10" /><line x1="15" y1="10" x2="15" y2="10" />
+                    </svg>
+                  ),
+                },
               ].map((c, i) => (
-                <div key={i} className="bento-card fade-up" style={{ transitionDelay: `${i * 100}ms` }}>
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', color: '#A855F7' }}>{c.icon}</div>
-                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', fontWeight: 700, color: 'rgba(148,163,184,0.08)', lineHeight: 1 }}>{c.n}</span>
-                  </div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem', color: '#fff' }}>{c.h}</h3>
-                  <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7 }}>{c.p}</p>
+                <div key={i} className="step-card" style={{ '--step-color': c.color, '--step-bg': c.bg } as React.CSSProperties}>
+                  {/* Connector line between cards */}
+                  {i < 2 && <div className="step-connector"><div className="step-connector-line" /></div>}
+
+                  {/* Step number watermark */}
+                  <span className="step-number">{c.n}</span>
+
+                  {/* Icon */}
+                  <div className="step-icon">{c.icon}</div>
+
+                  {/* Content */}
+                  <h3 className="step-title">{c.h}</h3>
+                  <p className="step-desc">{c.p}</p>
+
+                  {/* Bottom accent bar */}
+                  <div className="step-accent" />
                 </div>
               ))}
             </div>
