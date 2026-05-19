@@ -1,25 +1,20 @@
 'use client';
 
-import { useGraphStore, FilterType } from '@/store/graphStore';
+import { useGraphStore, ViewLevel } from '@/store/graphStore';
+import { ChevronLeft } from 'lucide-react';
 
-const FILTER_COLORS: Record<string, string> = {
-  all: '#888888',
-  core: '#3b82f6',
-  hotspot: '#ef4444',
-  stable: '#10b981',
-  utility: '#4b5563',
-};
+const LEVEL_CONFIG: { id: ViewLevel; label: string; icon: string }[] = [
+  { id: 'architecture', label: 'Architecture', icon: '🏗' },
+  { id: 'module', label: 'Modules', icon: '📦' },
+  { id: 'file', label: 'Files', icon: '📄' },
+];
 
-const FILTER_LABELS: Record<string, string> = {
-  all: 'All',
-  core: 'Core',
-  hotspot: 'Hotspot',
-  stable: 'Stable',
-  utility: 'Utility',
-};
+export function LevelSwitcher() {
+  const { viewLevel, setViewLevel, expandedCluster, collapseCluster, clusters } = useGraphStore();
 
-export function FilterBar() {
-  const { activeFilter, setActiveFilter } = useGraphStore();
+  const expandedClusterName = expandedCluster
+    ? clusters.find(c => c.id === expandedCluster)?.humanLabel || expandedCluster
+    : null;
 
   return (
     <div
@@ -30,44 +25,105 @@ export function FilterBar() {
         transform: 'translateX(-50%)',
         display: 'flex',
         alignItems: 'center',
-        gap: 2,
+        gap: 4,
         background: 'rgba(8,8,8,0.92)',
         backdropFilter: 'blur(16px)',
         border: '1px solid #1f1f1f',
-        borderRadius: 9999,
+        borderRadius: 12,
         padding: 4,
         zIndex: 20,
       }}
     >
-      {(['all', 'core', 'hotspot', 'stable', 'utility'] as FilterType[]).map((filter) => {
-        const isActive = activeFilter === filter;
-        const color = FILTER_COLORS[filter];
+      {/* Back button (shown in module view) */}
+      {viewLevel === 'module' && expandedCluster && (
+        <button
+          onClick={collapseCluster}
+          style={{
+            height: 30,
+            width: 30,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid #1f1f1f',
+            borderRadius: 8,
+            cursor: 'pointer',
+            color: '#888',
+            flexShrink: 0,
+            transition: 'all 200ms ease',
+          }}
+          title="Back to Architecture"
+        >
+          <ChevronLeft size={14} />
+        </button>
+      )}
+
+      {/* Level buttons */}
+      {LEVEL_CONFIG.map((level) => {
+        const isActive = viewLevel === level.id;
+        const isModuleWithoutCluster = level.id === 'module' && !expandedCluster && viewLevel !== 'module';
+
         return (
           <button
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
+            key={level.id}
+            onClick={() => {
+              if (level.id === 'module' && !expandedCluster) return;
+              setViewLevel(level.id);
+            }}
             style={{
-              height: 28,
-              paddingLeft: 12,
+              height: 30,
+              paddingLeft: 10,
               paddingRight: 12,
               fontSize: 11,
-              fontFamily: 'var(--font-code, monospace)',
+              fontFamily: 'var(--font-body, sans-serif)',
               fontWeight: 500,
-              color: isActive ? color : '#555555',
-              background: isActive ? `${color}20` : 'transparent',
+              color: isActive ? '#ffffff' : isModuleWithoutCluster ? '#333' : '#666',
+              background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
               border: 'none',
-              borderRadius: 9999,
-              cursor: 'pointer',
+              borderRadius: 8,
+              cursor: isModuleWithoutCluster ? 'default' : 'pointer',
               transition: 'all 200ms ease',
               whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              opacity: isModuleWithoutCluster ? 0.4 : 1,
             }}
           >
-            {FILTER_LABELS[filter]}
+            <span style={{ fontSize: 13 }}>{level.icon}</span>
+            {level.label}
           </button>
         );
       })}
+
+      {/* Breadcrumb for module view */}
+      {viewLevel === 'module' && expandedClusterName && (
+        <div style={{
+          height: 30,
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: 8,
+          paddingRight: 12,
+          borderLeft: '1px solid #1f1f1f',
+          marginLeft: 2,
+        }}>
+          <span style={{
+            fontSize: 10,
+            color: '#888',
+            fontFamily: 'var(--font-code, monospace)',
+            maxWidth: 160,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {expandedClusterName}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
 
-export default FilterBar;
+/* Keep FilterBar export for backward compatibility */
+export const FilterBar = LevelSwitcher;
+export default LevelSwitcher;
