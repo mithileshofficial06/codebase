@@ -2,6 +2,7 @@
 
 import { memo, useState } from 'react';
 import { EdgeProps, getBezierPath } from 'reactflow';
+import { useGraphStore } from '@/store/graphStore';
 
 function CustomEdgeComponent({
   id,
@@ -12,8 +13,11 @@ function CustomEdgeComponent({
   sourcePosition,
   targetPosition,
   data,
+  source,
+  target,
 }: EdgeProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const focusedNodeId = useGraphStore((s) => s.focusedNodeId);
 
   const [edgePath] = getBezierPath({
     sourceX,
@@ -29,6 +33,10 @@ function CustomEdgeComponent({
   const targetColor = data?.targetColor || '#4b5563';
   const isClusterEdge = data?.isClusterEdge || false;
 
+  // Focus mode logic
+  const isConnectedToFocus = focusedNodeId && (source === focusedNodeId || target === focusedNodeId);
+  const shouldDim = focusedNodeId && !isConnectedToFocus;
+
   // Stroke width based on weight — cluster edges are thicker
   let baseWidth: number;
   if (isClusterEdge) {
@@ -38,14 +46,14 @@ function CustomEdgeComponent({
   }
 
   const strokeWidth = isHovered ? baseWidth + 1.5 : baseWidth;
-  const opacity = isHovered ? 1.0 : isClusterEdge ? 0.6 : 0.4;
+  const opacity = shouldDim ? 0.05 : isHovered ? 1.0 : isClusterEdge ? 0.6 : 0.4;
 
   const gradientId = `edge-gradient-${id}`;
   const pathId = `edge-path-${id}`;
   const markerId = `edge-marker-${id}`;
 
-  // Show flowing particles on cluster edges always, file edges on hover
-  const showParticles = isClusterEdge || isHovered;
+  // Show flowing particles on cluster edges always, file edges on hover or when connected to focus
+  const showParticles = isClusterEdge || isHovered || isConnectedToFocus;
 
   return (
     <g

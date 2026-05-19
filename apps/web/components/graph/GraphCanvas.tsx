@@ -25,6 +25,8 @@ import ClusterNodeComp from './ClusterNode';
 import { LevelSwitcher } from './GraphControls';
 import { NodeDetail } from './NodeDetail';
 import { OnboardingPanel } from './OnboardingPanel';
+import { FocusMode } from './FocusMode';
+import { GraphSearch } from './GraphSearch';
 
 /* ─── Node/Edge type maps ─────────────────────────────────────── */
 
@@ -419,6 +421,9 @@ function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasP
 
       {/* Onboarding overlay (Architecture view only) */}
       {viewLevel === 'architecture' && <OnboardingPanel />}
+      
+      {/* Focus Mode overlay */}
+      <FocusMode />
     </>
   );
 }
@@ -432,6 +437,7 @@ export function GraphCanvas({ nodes, edges }: GraphCanvasProps) {
         <GraphCanvasInner nodes={nodes} edges={edges} />
         <LevelSwitcher />
         <NodeDetail />
+        <GraphSearch />
       </ReactFlowProvider>
     </div>
   );

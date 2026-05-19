@@ -16,14 +16,30 @@ const TYPE_GLOW: Record<NodeType, string> = {
 function CustomNodeComponent({ id, data, selected }: any) {
   const [isHovered, setIsHovered] = useState(false);
   const activeFilter = useGraphStore((s) => s.activeFilter);
+  const focusedNodeId = useGraphStore((s) => s.focusedNodeId);
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
+  const setFocusedNode = useGraphStore((s) => s.setFocusedNode);
 
   const nodeType: NodeType = data.nodeType || 'utility';
   const extColor: string = data.extColor || '#4b5563';
-  const isDimmed = activeFilter !== 'all' && activeFilter !== nodeType;
+  
+  // Focus mode logic
+  const isFocused = focusedNodeId === id;
+  const isConnected = focusedNodeId && (
+    data.dependencies?.includes(focusedNodeId) || 
+    data.dependents?.includes(focusedNodeId)
+  );
+  const shouldDim = focusedNodeId && !isFocused && !isConnected;
+  
+  // Filter dimming
+  const isFilterDimmed = activeFilter !== 'all' && activeFilter !== nodeType;
+  
+  // Combined dimming logic
+  const isDimmed = shouldDim || isFilterDimmed;
 
-  const scale = selected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.85 : 1;
-  const opacity = isDimmed ? 0.1 : 1;
+  const scale = isFocused ? 1.3 : selected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.85 : 1;
+  const opacity = isDimmed ? 0.12 : isConnected ? 0.7 : 1;
+  const zIndex = isFocused ? 100 : selected ? 50 : isHovered ? 10 : 1;
 
   // Adaptive radius based on connectivity
   const connections = (data.dependencies?.length || 0) + (data.dependents?.length || 0);
@@ -45,6 +61,10 @@ function CustomNodeComponent({ id, data, selected }: any) {
           dependents: data.dependents || [],
         } as any);
       }}
+      onDoubleClick={() => {
+        // Double-click to enter focus mode
+        setFocusedNode(id);
+      }}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -52,7 +72,9 @@ function CustomNodeComponent({ id, data, selected }: any) {
         cursor: 'pointer',
         transform: `scale(${scale})`,
         opacity,
-        transition: 'transform 150ms ease, opacity 150ms ease',
+        transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 400ms ease',
+        zIndex,
+        position: 'relative',
       }}
     >
       {/* Invisible handles */}
@@ -64,17 +86,38 @@ function CustomNodeComponent({ id, data, selected }: any) {
 
       {/* Node circle */}
       <div style={{ position: 'relative' }}>
+        {/* Focus glow bloom */}
+        {isFocused && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: -12,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${extColor}60 0%, transparent 70%)`,
+              filter: 'blur(8px)',
+              animation: 'focus-pulse 2s ease-in-out infinite',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+        
         <div
           style={{
             width: radius * 2,
             height: radius * 2,
             borderRadius: '50%',
             backgroundColor: extColor,
-            boxShadow: isHovered || selected
+            boxShadow: isFocused
+              ? `0 0 20px 6px ${extColor}80, ${TYPE_GLOW[nodeType]}`
+              : isHovered || selected
               ? TYPE_GLOW[nodeType]
               : `0 0 4px 1px ${extColor}40`,
-            border: selected ? '2px solid #ffffff' : `1px solid ${extColor}80`,
-            transition: 'box-shadow 150ms ease',
+            border: isFocused 
+              ? `3px solid ${extColor}` 
+              : selected 
+              ? '2px solid #ffffff' 
+              : `1px solid ${extColor}80`,
+            transition: 'box-shadow 400ms ease, border 400ms ease',
           }}
         />
 
@@ -149,6 +192,10 @@ function CustomNodeComponent({ id, data, selected }: any) {
         @keyframes hotspot-pulse {
           0% { transform: scale(1); opacity: 0.8; }
           100% { transform: scale(2.5); opacity: 0; }
+        }
+        @keyframes focus-pulse {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.1); }
         }
       `}</style>
     </div>
