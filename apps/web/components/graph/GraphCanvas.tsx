@@ -15,6 +15,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import * as d3 from 'd3-force';
+import { GraphNode, GraphEdge } from '@codemap/shared';
 import { useGraphStore } from '@/store/graphStore';
 import { CustomNode } from './CustomNode';
 import { CustomEdge } from './CustomEdge';
@@ -33,46 +34,16 @@ const TYPE_COLORS: Record<string, string> = {
   utility: '#4b5563',
 };
 
-/* ─── Mock data ───────────────────────────────────────────── */
+/* ─── Classify node by commit frequency & connectivity ───── */
 
-const MOCK_NODES_RAW = [
-  { id: 'app',      label: 'app.ts',      nodeType: 'core',    commitFrequency: 8,  fileSize: 4200 },
-  { id: 'auth',     label: 'auth.ts',     nodeType: 'hotspot', commitFrequency: 24, fileSize: 3100 },
-  { id: 'db',       label: 'db.ts',       nodeType: 'core',    commitFrequency: 5,  fileSize: 2800 },
-  { id: 'router',   label: 'router.ts',   nodeType: 'core',    commitFrequency: 6,  fileSize: 1900 },
-  { id: 'payment',  label: 'payment.ts',  nodeType: 'hotspot', commitFrequency: 18, fileSize: 3800 },
-  { id: 'orders',   label: 'orders.ts',   nodeType: 'hotspot', commitFrequency: 15, fileSize: 4100 },
-  { id: 'user',     label: 'user.ts',     nodeType: 'stable',  commitFrequency: 3,  fileSize: 2200 },
-  { id: 'email',    label: 'email.ts',    nodeType: 'stable',  commitFrequency: 2,  fileSize: 1100 },
-  { id: 'utils',    label: 'utils.ts',    nodeType: 'utility', commitFrequency: 1,  fileSize: 800 },
-  { id: 'config',   label: 'config.ts',   nodeType: 'utility', commitFrequency: 1,  fileSize: 400 },
-  { id: 'logger',   label: 'logger.ts',   nodeType: 'utility', commitFrequency: 1,  fileSize: 300 },
-  { id: 'types',    label: 'types.ts',    nodeType: 'utility', commitFrequency: 2,  fileSize: 600 },
-];
+function classifyNode(node: GraphNode): 'core' | 'hotspot' | 'stable' | 'utility' {
+  if (node.commitFrequency >= 10) return 'hotspot';
+  if (node.dependencies.length >= 3 || node.dependents.length >= 3) return 'core';
+  if (node.commitFrequency <= 2 && node.dependencies.length <= 1) return 'utility';
+  return 'stable';
+}
 
-const MOCK_EDGES_RAW = [
-  { id: 'e1',  source: 'app',     target: 'auth',    weight: 3 },
-  { id: 'e2',  source: 'app',     target: 'db',      weight: 3 },
-  { id: 'e3',  source: 'app',     target: 'router',  weight: 2 },
-  { id: 'e4',  source: 'router',  target: 'payment', weight: 2 },
-  { id: 'e5',  source: 'router',  target: 'orders',  weight: 2 },
-  { id: 'e6',  source: 'router',  target: 'user',    weight: 1 },
-  { id: 'e7',  source: 'auth',    target: 'db',      weight: 3 },
-  { id: 'e8',  source: 'auth',    target: 'utils',   weight: 1 },
-  { id: 'e9',  source: 'orders',  target: 'payment', weight: 2 },
-  { id: 'e10', source: 'orders',  target: 'email',   weight: 1 },
-  { id: 'e11', source: 'orders',  target: 'db',      weight: 2 },
-  { id: 'e12', source: 'payment', target: 'utils',   weight: 1 },
-  { id: 'e13', source: 'payment', target: 'config',  weight: 1 },
-  { id: 'e14', source: 'user',    target: 'db',      weight: 2 },
-  { id: 'e15', source: 'email',   target: 'config',  weight: 1 },
-  { id: 'e16', source: 'app',     target: 'logger',  weight: 1 },
-  { id: 'e17', source: 'db',      target: 'config',  weight: 1 },
-  { id: 'e18', source: 'orders',  target: 'types',   weight: 1 },
-  { id: 'e19', source: 'user',    target: 'types',   weight: 1 },
-];
-
-/* ─── D3 layout computation (synchronous, runs once) ─────── */
+/* ─── D3 layout computation (synchronous) ────────────────── */
 
 interface SimNode {
   id: string;
@@ -83,29 +54,24 @@ interface SimNode {
   index?: number;
 }
 
-function computeLayout() {
-  // Build dependency/dependent lookups
-  const depsMap: Record<string, string[]> = {};
-  const dependentsMap: Record<string, string[]> = {};
-  MOCK_NODES_RAW.forEach(n => { depsMap[n.id] = []; dependentsMap[n.id] = []; });
-  MOCK_EDGES_RAW.forEach(e => {
-    depsMap[e.source]?.push(e.target);
-    dependentsMap[e.target]?.push(e.source);
-  });
-
+function computeLayout(graphNodes: GraphNode[], graphEdges: GraphEdge[]) {
   // Create simulation nodes with initial circular positions
-  const simNodes: SimNode[] = MOCK_NODES_RAW.map((n, i) => {
-    const angle = (i / MOCK_NODES_RAW.length) * 2 * Math.PI;
-    return { id: n.id, x: Math.cos(angle) * 150, y: Math.sin(angle) * 150 };
+  const simNodes: SimNode[] = graphNodes.map((n, i) => {
+    const angle = (i / Math.max(graphNodes.length, 1)) * 2 * Math.PI;
+    const radius = Math.min(200, graphNodes.length * 15);
+    return { id: n.id, x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
   });
 
-  // Create simulation links
-  const simLinks = MOCK_EDGES_RAW.map(e => ({
+  // Create simulation links — only include edges where both source and target exist
+  const nodeIdSet = new Set(graphNodes.map(n => n.id));
+  const validEdges = graphEdges.filter(e => nodeIdSet.has(e.source) && nodeIdSet.has(e.target));
+
+  const simLinks = validEdges.map(e => ({
     source: e.source,
     target: e.target,
   }));
 
-  // Run D3 force simulation synchronously for 500 ticks
+  // Run D3 force simulation synchronously
   const simulation = d3.forceSimulation<SimNode>(simNodes)
     .force('link', d3.forceLink(simLinks).id((d: any) => d.id).distance(180).strength(1.0).iterations(3))
     .force('charge', d3.forceManyBody().strength(-500))
@@ -115,30 +81,38 @@ function computeLayout() {
     .force('y', d3.forceY(0).strength(0.05))
     .stop();
 
-  // Run ticks synchronously
   for (let i = 0; i < 500; i++) {
     simulation.tick();
   }
 
   // Convert to ReactFlow nodes
   const rfNodes: Node[] = simNodes.map((sn) => {
-    const raw = MOCK_NODES_RAW.find(n => n.id === sn.id)!;
+    const raw = graphNodes.find(n => n.id === sn.id)!;
+    const nodeType = classifyNode(raw);
     return {
       id: sn.id,
       type: 'custom',
       position: { x: sn.x, y: sn.y },
       data: {
-        ...raw,
-        dependencies: depsMap[sn.id] || [],
-        dependents: dependentsMap[sn.id] || [],
+        id: raw.id,
+        label: raw.label,
+        nodeType,
+        commitFrequency: raw.commitFrequency,
+        fileSize: raw.size,
+        path: raw.path,
+        dependencies: raw.dependencies,
+        dependents: raw.dependents,
       },
     };
   });
 
   // Convert to ReactFlow edges
-  const rfEdges: Edge[] = MOCK_EDGES_RAW.map((e) => {
-    const srcType = MOCK_NODES_RAW.find(n => n.id === e.source)?.nodeType || 'utility';
-    const tgtType = MOCK_NODES_RAW.find(n => n.id === e.target)?.nodeType || 'utility';
+  const rfEdges: Edge[] = validEdges.map((e) => {
+    const srcNode = graphNodes.find(n => n.id === e.source);
+    const tgtNode = graphNodes.find(n => n.id === e.target);
+    const srcType = srcNode ? classifyNode(srcNode) : 'utility';
+    const tgtType = tgtNode ? classifyNode(tgtNode) : 'utility';
+
     return {
       id: e.id,
       source: e.source,
@@ -155,10 +129,20 @@ function computeLayout() {
   return { rfNodes, rfEdges };
 }
 
+/* ─── Props ───────────────────────────────────────────────── */
+
+interface GraphCanvasProps {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 /* ─── Inner graph (must be inside ReactFlowProvider) ──────── */
 
-function GraphCanvasInner() {
-  const { rfNodes, rfEdges } = useMemo(() => computeLayout(), []);
+function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasProps) {
+  const { rfNodes, rfEdges } = useMemo(
+    () => computeLayout(graphNodes, graphEdges),
+    [graphNodes, graphEdges]
+  );
 
   const [nodes, , onNodesChange] = useNodesState(rfNodes);
   const [edges, , onEdgesChange] = useEdgesState(rfEdges);
@@ -172,6 +156,7 @@ function GraphCanvasInner() {
       nodeType: n.data.nodeType,
       commitFrequency: n.data.commitFrequency,
       size: n.data.fileSize,
+      path: n.data.path,
       dependencies: n.data.dependencies,
       dependents: n.data.dependents,
     }));
@@ -221,11 +206,11 @@ function GraphCanvasInner() {
 
 /* ─── Outer wrapper (provides ReactFlowProvider) ─────────── */
 
-export function GraphCanvas() {
+export function GraphCanvas({ nodes, edges }: GraphCanvasProps) {
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <ReactFlowProvider>
-        <GraphCanvasInner />
+        <GraphCanvasInner nodes={nodes} edges={edges} />
         <FilterBar />
         <NodeDetail />
       </ReactFlowProvider>

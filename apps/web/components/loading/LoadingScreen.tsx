@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { RepoData } from '@codemap/shared';
 import GraphAssembly from './GraphAssembly';
 import ChecklistItem, { StepStatus } from './ChecklistItem';
 
@@ -10,93 +11,115 @@ interface Step {
   label: string;
   activeLabel?: string;
   status: StepStatus;
-  fileCount?: number;
 }
 
 interface LoadingScreenProps {
-  onComplete: () => void;
+  repoUrl: string;
+  onComplete: (data: RepoData) => void;
 }
 
+// Map SSE step IDs to our checklist
 const STEP_DEFS = [
-  { id: 'connect', label: 'Connecting to GitHub' },
-  { id: 'fetch', label: 'Fetching file tree' },
-  { id: 'parse', label: 'Parsing imports' },
-  { id: 'graph', label: 'Building dependency graph' },
-  { id: 'health', label: 'Calculating health score' },
+  { id: 'clone',   label: 'Connecting to GitHub' },
+  { id: 'parse',   label: 'Parsing imports' },
+  { id: 'analyze', label: 'Building dependency graph' },
+  { id: 'health',  label: 'Calculating health score' },
+  { id: 'graph',   label: 'Finalizing graph' },
 ];
 
-export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [fileCount, setFileCount] = useState(0);
+export default function LoadingScreen({ repoUrl, onComplete }: LoadingScreenProps) {
+  const [stepStatuses, setStepStatuses] = useState<Record<string, { status: StepStatus; message?: string }>>({});
+  const [error, setError] = useState<string | null>(null);
   const [allDone, setAllDone] = useState(false);
   const [fadingOut, setFadingOut] = useState(false);
+  const resultRef = useRef<RepoData | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Advance steps with 1.5s delay each
   useEffect(() => {
-    if (currentStep > STEP_DEFS.length) return;
+    if (!repoUrl) return;
 
-    const delay = currentStep === 0 ? 800 : 1500;
-    const timer = setTimeout(() => {
-      if (currentStep < STEP_DEFS.length) {
-        setCurrentStep((s) => s + 1);
-      } else {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const sseUrl = `${apiUrl}/analyze/stream?repo=${encodeURIComponent(repoUrl)}`;
+
+    const es = new EventSource(sseUrl);
+    eventSourceRef.current = es;
+
+    es.addEventListener('progress', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setStepStatuses(prev => ({
+          ...prev,
+          [data.step]: { status: data.status === 'completed' ? 'complete' : data.status === 'processing' ? 'active' : 'pending', message: data.message },
+        }));
+      } catch {}
+    });
+
+    es.addEventListener('result', (event) => {
+      try {
+        const data: RepoData = JSON.parse(event.data);
+        resultRef.current = data;
         setAllDone(true);
+      } catch {}
+      es.close();
+    });
+
+    es.addEventListener('error', (event) => {
+      // Try to parse a custom error message
+      try {
+        const data = JSON.parse((event as any).data);
+        setError(data.message || 'Analysis failed');
+      } catch {
+        setError('Connection to analysis server failed. Is the API running?');
       }
-    }, delay);
+      es.close();
+    });
 
-    return () => clearTimeout(timer);
-  }, [currentStep]);
+    es.onerror = () => {
+      if (es.readyState === EventSource.CLOSED) return;
+      setError('Connection to analysis server lost. Is the API running on localhost:4000?');
+      es.close();
+    };
 
-  // File counter for step 2
-  useEffect(() => {
-    if (currentStep !== 2) return; // step index 1 = "Fetching file tree" is active when currentStep=2 means step 1 is now active
-    // Actually, when currentStep=2, step index 1 (fetch) just completed and step 2 (parse) is active
-    // Let's re-think: currentStep is the index of the NEXT step to activate
-    // So when currentStep transitions from 1 to 2, step 1 becomes active
-  }, [currentStep]);
-
-  // Simulate file count when "Fetching file tree" is active (step index 1, active when currentStep === 1)
-  useEffect(() => {
-    if (currentStep !== 1) return;
-    setFileCount(0);
-    let count = 0;
-    const interval = setInterval(() => {
-      count += Math.floor(Math.random() * 8) + 2;
-      if (count > 43) count = 43;
-      setFileCount(count);
-      if (count >= 43) clearInterval(interval);
-    }, 120);
-    return () => clearInterval(interval);
-  }, [currentStep]);
+    return () => {
+      es.close();
+    };
+  }, [repoUrl]);
 
   // When all done, fade out then call onComplete
   useEffect(() => {
-    if (!allDone) return;
+    if (!allDone || !resultRef.current) return;
     const timer = setTimeout(() => {
       setFadingOut(true);
-      setTimeout(onComplete, 800);
+      setTimeout(() => onComplete(resultRef.current!), 800);
     }, 600);
     return () => clearTimeout(timer);
   }, [allDone, onComplete]);
 
-  const steps: Step[] = useMemo(
-    () =>
-      STEP_DEFS.map((def, i) => {
-        let status: StepStatus = 'pending';
-        if (i < currentStep) status = 'complete';
-        else if (i === currentStep) status = 'active';
+  // Build steps for display
+  const steps: Step[] = useMemo(() => {
+    // Determine which steps are done based on SSE events
+    return STEP_DEFS.map((def) => {
+      const stepData = stepStatuses[def.id];
+      let status: StepStatus = 'pending';
+      let activeLabel: string | undefined;
 
-        let activeLabel: string | undefined;
-        if (def.id === 'fetch' && status === 'active') {
-          activeLabel = `Fetching file tree... ${fileCount} files`;
+      if (stepData) {
+        status = stepData.status as StepStatus;
+        if (status === 'active' && stepData.message) {
+          activeLabel = stepData.message;
         }
+        if (status === 'complete' && stepData.message) {
+          activeLabel = stepData.message;
+        }
+      }
 
-        return { ...def, status, activeLabel };
-      }),
-    [currentStep, fileCount]
-  );
+      return { ...def, status, activeLabel };
+    });
+  }, [stepStatuses]);
 
-  const progress = currentStep / STEP_DEFS.length;
+  // Estimate progress (0-1) from completed steps
+  const completedCount = steps.filter(s => s.status === 'complete').length;
+  const progress = completedCount / STEP_DEFS.length;
 
   return (
     <motion.div
@@ -121,6 +144,23 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           />
         ))}
       </div>
+
+      {/* Error state */}
+      {error && (
+        <div style={{
+          marginTop: 24,
+          padding: '10px 16px',
+          background: 'rgba(239,68,68,0.1)',
+          border: '1px solid rgba(239,68,68,0.2)',
+          borderRadius: 8,
+          color: '#ef4444',
+          fontSize: 13,
+          maxWidth: 400,
+          textAlign: 'center',
+        }}>
+          {error}
+        </div>
+      )}
     </motion.div>
   );
 }

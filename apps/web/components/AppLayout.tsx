@@ -2,52 +2,35 @@
 
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import { RepoData } from '@codemap/shared';
 import { ChatPanel } from './chat/ChatPanel';
 import { useChat } from '@/hooks/useChat';
 
 const GraphCanvas = dynamic(() => import('./graph/GraphCanvas'), { ssr: false });
 
-// Same mock data as GraphCanvas for chat context
-const MOCK_GRAPH_DATA = {
-  nodes: [
-    { id: 'app',      label: 'app.ts',      nodeType: 'core',    commitFrequency: 8,  fileSize: 4200 },
-    { id: 'auth',     label: 'auth.ts',     nodeType: 'hotspot', commitFrequency: 24, fileSize: 3100 },
-    { id: 'db',       label: 'db.ts',       nodeType: 'core',    commitFrequency: 5,  fileSize: 2800 },
-    { id: 'router',   label: 'router.ts',   nodeType: 'core',    commitFrequency: 6,  fileSize: 1900 },
-    { id: 'payment',  label: 'payment.ts',  nodeType: 'hotspot', commitFrequency: 18, fileSize: 3800 },
-    { id: 'orders',   label: 'orders.ts',   nodeType: 'hotspot', commitFrequency: 15, fileSize: 4100 },
-    { id: 'user',     label: 'user.ts',     nodeType: 'stable',  commitFrequency: 3,  fileSize: 2200 },
-    { id: 'email',    label: 'email.ts',    nodeType: 'stable',  commitFrequency: 2,  fileSize: 1100 },
-    { id: 'utils',    label: 'utils.ts',    nodeType: 'utility', commitFrequency: 1,  fileSize: 800 },
-    { id: 'config',   label: 'config.ts',   nodeType: 'utility', commitFrequency: 1,  fileSize: 400 },
-    { id: 'logger',   label: 'logger.ts',   nodeType: 'utility', commitFrequency: 1,  fileSize: 300 },
-    { id: 'types',    label: 'types.ts',    nodeType: 'utility', commitFrequency: 2,  fileSize: 600 },
-  ],
-  edges: [
-    { id: 'e1',  source: 'app',     target: 'auth',    weight: 3 },
-    { id: 'e2',  source: 'app',     target: 'db',      weight: 3 },
-    { id: 'e3',  source: 'app',     target: 'router',  weight: 2 },
-    { id: 'e4',  source: 'router',  target: 'payment', weight: 2 },
-    { id: 'e5',  source: 'router',  target: 'orders',  weight: 2 },
-    { id: 'e6',  source: 'router',  target: 'user',    weight: 1 },
-    { id: 'e7',  source: 'auth',    target: 'db',      weight: 3 },
-    { id: 'e8',  source: 'auth',    target: 'utils',   weight: 1 },
-    { id: 'e9',  source: 'orders',  target: 'payment', weight: 2 },
-    { id: 'e10', source: 'orders',  target: 'email',   weight: 1 },
-    { id: 'e11', source: 'orders',  target: 'db',      weight: 2 },
-    { id: 'e12', source: 'payment', target: 'utils',   weight: 1 },
-    { id: 'e13', source: 'payment', target: 'config',  weight: 1 },
-    { id: 'e14', source: 'user',    target: 'db',      weight: 2 },
-    { id: 'e15', source: 'email',   target: 'config',  weight: 1 },
-    { id: 'e16', source: 'app',     target: 'logger',  weight: 1 },
-    { id: 'e17', source: 'db',      target: 'config',  weight: 1 },
-    { id: 'e18', source: 'orders',  target: 'types',   weight: 1 },
-    { id: 'e19', source: 'user',    target: 'types',   weight: 1 },
-  ],
-};
+interface AppLayoutProps {
+  repoData: RepoData;
+}
 
-export default function AppLayout() {
-  const { messages, isLoading, sendMessage } = useChat(MOCK_GRAPH_DATA);
+export default function AppLayout({ repoData }: AppLayoutProps) {
+  // Build chat-compatible graph data from RepoData
+  const chatGraphData = {
+    nodes: repoData.nodes.map(n => ({
+      id: n.id,
+      label: n.label,
+      nodeType: 'file',
+      commitFrequency: n.commitFrequency,
+      fileSize: n.size,
+    })),
+    edges: repoData.edges.map(e => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      weight: e.weight,
+    })),
+  };
+
+  const { messages, isLoading, sendMessage } = useChat(chatGraphData);
 
   return (
     <motion.div
@@ -59,7 +42,10 @@ export default function AppLayout() {
     >
       {/* Left panel — Graph Canvas (75%) */}
       <div className="flex-[3] relative" style={{ borderRight: '1px solid #1a1a1a' }}>
-        <GraphCanvas />
+        <GraphCanvas
+          nodes={repoData.nodes}
+          edges={repoData.edges}
+        />
       </div>
 
       {/* Right panel (25%) */}
@@ -98,11 +84,20 @@ export default function AppLayout() {
           <div style={{ fontSize: 10, fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
             Health Score
           </div>
-          <div style={{ fontSize: 48, fontWeight: 700, color: '#f59e0b', lineHeight: 1, fontFamily: 'var(--font-heading, sans-serif)' }}>
-            74
+          <div style={{
+            fontSize: 48,
+            fontWeight: 700,
+            color: repoData.health.overall >= 70 ? '#10b981' : repoData.health.overall >= 40 ? '#f59e0b' : '#ef4444',
+            lineHeight: 1,
+            fontFamily: 'var(--font-heading, sans-serif)',
+          }}>
+            {repoData.health.overall}
           </div>
           <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
             / 100
+          </div>
+          <div style={{ fontSize: 10, color: '#444', marginTop: 8 }}>
+            {repoData.fileCount} files · {(repoData.totalSize / 1024).toFixed(1)} KB
           </div>
         </div>
       </div>

@@ -13,8 +13,12 @@ function buildGraphContext(data: GraphData): string {
     `${n.label} [${n.nodeType}] commits:${n.commitFrequency} size:${n.fileSize}b`
   ).join('\n');
 
+  // Build ID→label lookup so edges reference readable names
+  const idToLabel: Record<string, string> = {};
+  data.nodes.forEach(n => { idToLabel[n.id] = n.label; });
+
   const edgesSummary = data.edges.map(e =>
-    `${e.source}→${e.target} (weight:${e.weight})`
+    `${idToLabel[e.source] || e.source}→${idToLabel[e.target] || e.target}`
   ).join(', ');
 
   return `Nodes:\n${nodesSummary}\n\nEdges: ${edgesSummary}`;
