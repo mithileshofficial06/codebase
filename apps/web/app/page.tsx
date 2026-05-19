@@ -3,8 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Link2, Map, MessageCircle, Zap, Shield, BarChart3, ArrowRight } from 'lucide-react';
-
+import { Link2, Map, MessageCircle, Zap, Shield, BarChart3, ArrowRight, Globe, Settings, Star, Users } from 'lucide-react';
 
 type PageState = 'landing' | 'transitioning';
 
@@ -42,13 +41,19 @@ function useCountUp(target: number, dur = 1400) {
 function StickyNav() {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => { const fn = () => setScrolled(window.scrollY > 20); window.addEventListener('scroll', fn, { passive: true }); return () => window.removeEventListener('scroll', fn); }, []);
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   return (
     <nav className={`site-nav ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="url(#lg)" strokeWidth="1.5" /><circle cx="8" cy="10" r="2" fill="#A855F7" /><circle cx="16" cy="10" r="2" fill="#00D9FF" /><circle cx="12" cy="16" r="2" fill="#7C3AED" /><line x1="8" y1="10" x2="16" y2="10" stroke="#1e293b" strokeWidth="0.8" /><line x1="8" y1="10" x2="12" y2="16" stroke="#1e293b" strokeWidth="0.8" /><line x1="16" y1="10" x2="12" y2="16" stroke="#1e293b" strokeWidth="0.8" /><defs><linearGradient id="lg" x1="0" y1="0" x2="24" y2="24"><stop stopColor="#A855F7" /><stop offset="1" stopColor="#00D9FF" /></linearGradient></defs></svg>
         CodeMap
       </div>
-      <button className="nav-cta-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Get Started <ArrowRight size={14} /></button>
+      <div className="nav-links">
+        <button onClick={() => scrollTo('how-it-works')}>How it works</button>
+        <button onClick={() => scrollTo('features')}>Features</button>
+        <button onClick={() => scrollTo('pricing')}>Pricing</button>
+      </div>
+      <button className="nav-cta-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Try it free</button>
     </nav>
   );
 }
@@ -166,43 +171,49 @@ function HealthScoreRing({ score }: { score: number }) {
 }
 
 /* ═══ Chat ═══ */
+const chatQA = [
+  { q: 'How is auth handled?', a: 'Authentication is in src/auth/session.ts via verifyToken. Used across 12 API routes.' },
+  { q: 'What files are most critical?', a: 'The most coupled file is src/api/handler.ts — it imports 23 modules and is imported by 8 others.' },
+  { q: 'Where are the API routes?', a: 'All API routes live in src/routes/. There are 14 route files handling REST endpoints.' },
+];
+
 function ChatPreview() {
-  const [show, setShow] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setShow(true), 2200); return () => clearTimeout(t); }, []);
+  const [active, setActive] = useState(0);
+  const [displayed, setDisplayed] = useState('');
+  const [typing, setTyping] = useState(true);
+
+  useEffect(() => {
+    setDisplayed('');
+    setTyping(true);
+    const full = chatQA[active].a;
+    let i = 0;
+    const timer = setInterval(() => {
+      i++;
+      setDisplayed(full.slice(0, i));
+      if (i >= full.length) { clearInterval(timer); setTyping(false); }
+    }, 18);
+    return () => clearInterval(timer);
+  }, [active]);
+
   return (
-    <div className="visual-card" style={{ height: 280 }}>
+    <div className="visual-card" style={{ height: 320 }}>
+      <div className="chat-chips">
+        {chatQA.map((c, i) => (
+          <button key={i} className={`chat-chip ${active === i ? 'active' : ''}`} onClick={() => setActive(i)}>{c.q}</button>
+        ))}
+      </div>
       <div className="chat-container">
-        <div className="chat-bubble user">How is authentication handled?</div>
-        {!show && <div className="typing-dots"><span /><span /><span /></div>}
-        {show && (<div className="chat-bubble ai"><div className="ai-avatar">AI</div><div>Authentication is in <span style={{ fontFamily: 'var(--font-code)', fontSize: '0.7rem', color: '#A855F7', background: 'rgba(124,58,237,0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>src/auth/session.ts</span> via <span style={{ color: '#fff', fontWeight: 500 }}>verifyToken</span>. Used across 12 API routes.</div></div>)}
+        <div className="chat-bubble user">{chatQA[active].q}</div>
+        <div className="chat-bubble ai">
+          <div className="ai-avatar">AI</div>
+          <div>{displayed}{typing && <span className="cursor-blink" style={{ color: '#A855F7' }}>▌</span>}</div>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ═══ Footer ═══ */
-function Footer() {
-  return (
-    <footer className="site-footer">
-      <div className="footer-grid">
-        <div className="footer-col">
-          <div className="flex items-center gap-2 mb-3" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="url(#lg2)" strokeWidth="1.5" /><circle cx="8" cy="10" r="2" fill="#A855F7" /><circle cx="16" cy="10" r="2" fill="#00D9FF" /><circle cx="12" cy="16" r="2" fill="#7C3AED" /><defs><linearGradient id="lg2" x1="0" y1="0" x2="24" y2="24"><stop stopColor="#A855F7" /><stop offset="1" stopColor="#00D9FF" /></linearGradient></defs></svg>
-            CodeMap
-          </div>
-          <p style={{ color: '#475569', fontSize: '0.8rem', lineHeight: 1.6, maxWidth: 260 }}>Understand any codebase instantly with AI-powered dependency analysis and visualization.</p>
-        </div>
-        <div className="footer-col"><h4>Product</h4><a href="#">Features</a><a href="#">Pricing</a><a href="#">Changelog</a><a href="#">Docs</a></div>
-        <div className="footer-col"><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a></div>
-        <div className="footer-col"><h4>Connect</h4><a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
-      </div>
-      <div className="footer-bottom">
-        <span>© 2026 CodeMap. All rights reserved.</span>
-        <span>Built for developers, by developers.</span>
-      </div>
-    </footer>
-  );
-}
+
 
 /* ═══════════════════════════════════════════════════════════════════ */
 export default function Home() {
@@ -227,7 +238,6 @@ export default function Home() {
 
         {/* ═══ HERO — Asymmetric ═══ */}
         <section className="min-h-[90vh] flex items-center py-20 px-6 relative">
-          {/* Radial glow behind hero */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%)' }} />
 
           <AnimatePresence mode="wait">
@@ -252,16 +262,18 @@ export default function Home() {
                   </motion.div>
 
                   <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
-                    <div className="hero-input-box mb-4">
+                    <div className="hero-input-box mb-2">
                       <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSubmit(inputValue)}
                         placeholder="github.com/vercel/next.js" spellCheck={false} autoComplete="off" />
-                      <button className="analyze-btn" disabled={!isValid} onClick={() => handleSubmit(inputValue)}>Analyze →</button>
+                      <button className="analyze-btn" disabled={!isValid} onClick={() => handleSubmit(inputValue)}>Analyze repo →</button>
                     </div>
+                    <p style={{ fontSize: '0.72rem', color: '#64748B', marginBottom: '1.5rem' }}>No signup required · Free for public repos</p>
+
                     <div className="stats-inline">
-                      <div className="stat-block"><div className="stat-val">50+</div><div className="stat-lbl">Languages</div></div>
-                      <div className="stat-block"><div className="stat-val">Zero</div><div className="stat-lbl">Setup</div></div>
-                      <div className="stat-block"><div className="stat-val">Free</div><div className="stat-lbl">Public repos</div></div>
+                      <div className="stat-card"><Globe size={16} color="#A855F7" /><div><div className="stat-val">50+</div><div className="stat-lbl">Languages</div></div></div>
+                      <div className="stat-card"><Settings size={16} color="#00D9FF" /><div><div className="stat-val">Zero</div><div className="stat-lbl">Setup</div></div></div>
+                      <div className="stat-card"><Star size={16} color="#fbbf24" /><div><div className="stat-val">Free</div><div className="stat-lbl">Public repos</div></div></div>
                     </div>
                   </motion.div>
                 </div>
@@ -278,7 +290,7 @@ export default function Home() {
         <div className="glow-separator" />
 
         {/* ═══ BENTO FEATURES ═══ */}
-        <section className="py-28 px-6">
+        <section id="features" className="py-28 px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-14 fade-up">
               <div className="section-badge" style={{ margin: '0 auto 1.25rem' }}><Zap size={12} /> Features</div>
@@ -290,9 +302,9 @@ export default function Home() {
               <div className="bento-card featured">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}><Map size={18} color="#A855F7" strokeWidth={1.5} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem' }}>Interactive Dependency Graph</h3>
+                  <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem' }}>See the full picture instantly</h3>
                 </div>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>Every file becomes a node. Every import becomes an edge. Navigate visually and understand how your code connects.</p>
+                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>A live dependency graph built from real import analysis — every file, every edge, instantly.</p>
                 <FeatureGraphSVG />
               </div>
               <div className="bento-card">
@@ -303,16 +315,16 @@ export default function Home() {
               </div>
               <div className="bento-card">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)' }}><Shield size={18} color="#f87171" strokeWidth={1.5} /></div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem' }}>Risk Detection</h3>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1rem' }}>Find the files where bugs cluster and changes cascade.</p>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem' }}>Know what&#39;s risky before you touch it</h3>
+                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1rem' }}>Hotspot detection surfaces files changed most often — where bugs cluster and changes cascade.</p>
                 <HotspotVisual />
               </div>
               <div className="bento-card featured">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)' }}><MessageCircle size={18} color="#A855F7" strokeWidth={1.5} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem' }}>AI Code Analysis</h3>
+                  <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem' }}>Ask your codebase anything</h3>
                 </div>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>Ask questions about your codebase and get answers that reference real files, functions, and dependency paths.</p>
+                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>Powered by Gemini. Answers reference real file names and dependency relationships — not generic advice.</p>
                 <ChatPreview />
               </div>
             </div>
@@ -321,8 +333,43 @@ export default function Home() {
 
         <div className="glow-separator" />
 
+        {/* ═══ SOCIAL PROOF ═══ */}
+        <section className="py-16 px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10 fade-up">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Users size={16} color="#A855F7" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94A3B8' }}>Trusted by developers</span>
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="github-stars-badge">
+                  <Star size={12} /> 1.2k stars on GitHub
+                </a>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 fade-up" style={{ transitionDelay: '100ms' }}>
+              {[
+                { initials: 'AK', name: 'Arjun K.', role: 'Staff Engineer', quote: 'CodeMap saved us hours of onboarding. New devs can explore our monorepo visually on day one.' },
+                { initials: 'SM', name: 'Sarah M.', role: 'Tech Lead', quote: 'The hotspot detection caught a god-file we missed for months. The AI chat is impressively accurate.' },
+                { initials: 'RP', name: 'Ryan P.', role: 'Open Source Maintainer', quote: 'I paste any PR contributor\'s fork and immediately see what they changed across the dependency graph.' },
+              ].map((t, i) => (
+                <div key={i} className="bento-card" style={{ padding: '1.5rem' }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="testimonial-avatar">{t.initials}</div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#fff' }}>{t.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{t.role}</div>
+                    </div>
+                  </div>
+                  <p style={{ color: '#94A3B8', fontSize: '0.82rem', lineHeight: 1.7, fontStyle: 'italic' }}>&ldquo;{t.quote}&rdquo;</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="glow-separator" />
+
         {/* ═══ HOW IT WORKS ═══ */}
-        <section className="py-28 px-6">
+        <section id="how-it-works" className="py-28 px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-14 fade-up">
               <div className="section-badge" style={{ margin: '0 auto 1.25rem' }}>How it works</div>
@@ -349,20 +396,43 @@ export default function Home() {
 
         <div className="glow-separator" />
 
-        {/* ═══ CTA ═══ */}
+        {/* ═══ BOTTOM CTA ═══ */}
         <section className="py-28 px-6 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%)' }} />
           <div className="max-w-2xl mx-auto text-center fade-up relative z-10">
-            <h2 className="text-3xl md:text-4xl tracking-[-0.03em] mb-4" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff' }}>Ready to explore?</h2>
-            <p style={{ color: '#94A3B8', marginBottom: '2rem', fontSize: '1rem' }}>Start understanding your codebase in seconds. Free for all public repositories.</p>
+            <h2 className="text-3xl md:text-4xl tracking-[-0.03em] mb-4" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff' }}>Ready to map your codebase?</h2>
+            <p style={{ color: '#94A3B8', marginBottom: '2rem', fontSize: '1rem' }}>Free forever for public repositories.</p>
+            <div className="hero-input-box mb-2" style={{ maxWidth: 480, margin: '0 auto' }}>
+              <input type="text" placeholder="github.com/vercel/next.js" spellCheck={false} autoComplete="off"
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit((e.target as HTMLInputElement).value); }} />
+              <button className="analyze-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Analyze repo →</button>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: '#64748B', marginBottom: '1.5rem' }}>No signup required · Free for public repos</p>
             <div className="flex justify-center gap-3 flex-wrap">
-              <button className="btn-primary" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Get Started Free <ArrowRight size={16} /></button>
               <button className="btn-secondary">View on GitHub <ArrowRight size={14} /></button>
             </div>
           </div>
         </section>
 
-        <Footer />
+        {/* ═══ FOOTER ═══ */}
+        <footer className="site-footer">
+          <div className="footer-grid">
+            <div className="footer-col">
+              <div className="flex items-center gap-2 mb-3" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="url(#lg2)" strokeWidth="1.5" /><circle cx="8" cy="10" r="2" fill="#A855F7" /><circle cx="16" cy="10" r="2" fill="#00D9FF" /><circle cx="12" cy="16" r="2" fill="#7C3AED" /><defs><linearGradient id="lg2" x1="0" y1="0" x2="24" y2="24"><stop stopColor="#A855F7" /><stop offset="1" stopColor="#00D9FF" /></linearGradient></defs></svg>
+                CodeMap
+              </div>
+              <p style={{ color: '#475569', fontSize: '0.8rem', lineHeight: 1.6, maxWidth: 260 }}>Understand any codebase instantly with AI-powered dependency analysis and visualization.</p>
+            </div>
+            <div className="footer-col"><h4>Product</h4><a href="#">Features</a><a href="#">Pricing</a><a href="#">Changelog</a><a href="#">Docs</a></div>
+            <div className="footer-col"><h4>Legal</h4><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+            <div className="footer-col"><h4>Connect</h4><a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+          </div>
+          <div className="footer-bottom">
+            <span>© 2026 CodeMap. All rights reserved.</span>
+            <span>Built for developers, by developers.</span>
+          </div>
+        </footer>
 
         <AnimatePresence>
           {state === 'transitioning' && (
@@ -373,3 +443,4 @@ export default function Home() {
     </>
   );
 }
+

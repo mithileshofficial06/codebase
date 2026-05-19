@@ -91,6 +91,16 @@ body {
   box-shadow: 0 0 20px var(--glow-purple);
 }
 .nav-cta-btn:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(124, 58, 237, 0.3); }
+.nav-links {
+  display: flex; align-items: center; gap: 0.25rem;
+}
+.nav-links button {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 0.82rem; font-weight: 500;
+  padding: 0.4rem 0.85rem; border-radius: 6px;
+  font-family: var(--font-body); transition: all 0.15s ease;
+}
+.nav-links button:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
 
 /* ═══ Fade Up ═══ */
 .fade-up {
@@ -264,6 +274,18 @@ body {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
   30% { transform: translateY(-4px); opacity: 0.8; }
 }
+.chat-chips {
+  display: flex; gap: 0.35rem; padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.chat-chip {
+  background: transparent; border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.25rem 0.7rem; font-size: 0.65rem; font-weight: 500;
+  color: var(--text-muted); cursor: pointer; font-family: var(--font-body);
+  transition: all 0.15s ease; white-space: nowrap;
+}
+.chat-chip:hover { border-color: var(--border-hover); color: var(--text-secondary); }
+.chat-chip.active { border-color: var(--purple); color: var(--purple-light); background: rgba(124,58,237,0.08); }
 
 /* ═══ Hero Input ═══ */
 .hero-input-box {
@@ -322,23 +344,45 @@ body {
   color: var(--text-dim); font-size: 0.72rem;
 }
 
+/* ═══ Social Proof ═══ */
+.testimonial-avatar {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.github-stars-badge {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.7rem; font-weight: 600; color: #fbbf24;
+  padding: 0.2rem 0.65rem; border-radius: 999px;
+  background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.15);
+  text-decoration: none; transition: all 0.15s ease;
+}
+.github-stars-badge:hover { background: rgba(251,191,36,0.12); }
+
 /* ═══ Feature Layout ═══ */
 .feature-row { display: flex; align-items: center; gap: 5rem; }
 .feature-row.reversed { flex-direction: row-reverse; }
 .feature-text { flex: 1; }
 .feature-visual { flex: 1; display: flex; justify-content: center; }
 
-/* ═══ Stats Inline ═══ */
+/* ═══ Stats Cards ═══ */
 .stats-inline {
-  display: flex; gap: 2.5rem; margin-top: 2rem;
+  display: flex; gap: 0.75rem; margin-top: 0;
 }
-.stat-block .stat-val {
-  font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700;
-  color: var(--text-primary); letter-spacing: -0.03em;
+.stat-card {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.9rem; border-radius: 10px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
 }
-.stat-block .stat-lbl {
-  font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
-  letter-spacing: 0.06em; margin-top: 0.15rem;
+.stat-card .stat-val {
+  font-family: var(--font-heading); font-size: 1rem; font-weight: 700;
+  color: var(--text-primary); letter-spacing: -0.03em; line-height: 1.2;
+}
+.stat-card .stat-lbl {
+  font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 /* ═══ Typing animation ═══ */
