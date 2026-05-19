@@ -2,10 +2,53 @@
 
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import { ChatPanel } from './chat/ChatPanel';
+import { useChat } from '@/hooks/useChat';
 
 const GraphCanvas = dynamic(() => import('./graph/GraphCanvas'), { ssr: false });
 
+// Same mock data as GraphCanvas for chat context
+const MOCK_GRAPH_DATA = {
+  nodes: [
+    { id: 'app',      label: 'app.ts',      nodeType: 'core',    commitFrequency: 8,  fileSize: 4200 },
+    { id: 'auth',     label: 'auth.ts',     nodeType: 'hotspot', commitFrequency: 24, fileSize: 3100 },
+    { id: 'db',       label: 'db.ts',       nodeType: 'core',    commitFrequency: 5,  fileSize: 2800 },
+    { id: 'router',   label: 'router.ts',   nodeType: 'core',    commitFrequency: 6,  fileSize: 1900 },
+    { id: 'payment',  label: 'payment.ts',  nodeType: 'hotspot', commitFrequency: 18, fileSize: 3800 },
+    { id: 'orders',   label: 'orders.ts',   nodeType: 'hotspot', commitFrequency: 15, fileSize: 4100 },
+    { id: 'user',     label: 'user.ts',     nodeType: 'stable',  commitFrequency: 3,  fileSize: 2200 },
+    { id: 'email',    label: 'email.ts',    nodeType: 'stable',  commitFrequency: 2,  fileSize: 1100 },
+    { id: 'utils',    label: 'utils.ts',    nodeType: 'utility', commitFrequency: 1,  fileSize: 800 },
+    { id: 'config',   label: 'config.ts',   nodeType: 'utility', commitFrequency: 1,  fileSize: 400 },
+    { id: 'logger',   label: 'logger.ts',   nodeType: 'utility', commitFrequency: 1,  fileSize: 300 },
+    { id: 'types',    label: 'types.ts',    nodeType: 'utility', commitFrequency: 2,  fileSize: 600 },
+  ],
+  edges: [
+    { id: 'e1',  source: 'app',     target: 'auth',    weight: 3 },
+    { id: 'e2',  source: 'app',     target: 'db',      weight: 3 },
+    { id: 'e3',  source: 'app',     target: 'router',  weight: 2 },
+    { id: 'e4',  source: 'router',  target: 'payment', weight: 2 },
+    { id: 'e5',  source: 'router',  target: 'orders',  weight: 2 },
+    { id: 'e6',  source: 'router',  target: 'user',    weight: 1 },
+    { id: 'e7',  source: 'auth',    target: 'db',      weight: 3 },
+    { id: 'e8',  source: 'auth',    target: 'utils',   weight: 1 },
+    { id: 'e9',  source: 'orders',  target: 'payment', weight: 2 },
+    { id: 'e10', source: 'orders',  target: 'email',   weight: 1 },
+    { id: 'e11', source: 'orders',  target: 'db',      weight: 2 },
+    { id: 'e12', source: 'payment', target: 'utils',   weight: 1 },
+    { id: 'e13', source: 'payment', target: 'config',  weight: 1 },
+    { id: 'e14', source: 'user',    target: 'db',      weight: 2 },
+    { id: 'e15', source: 'email',   target: 'config',  weight: 1 },
+    { id: 'e16', source: 'app',     target: 'logger',  weight: 1 },
+    { id: 'e17', source: 'db',      target: 'config',  weight: 1 },
+    { id: 'e18', source: 'orders',  target: 'types',   weight: 1 },
+    { id: 'e19', source: 'user',    target: 'types',   weight: 1 },
+  ],
+};
+
 export default function AppLayout() {
+  const { messages, isLoading, sendMessage } = useChat(MOCK_GRAPH_DATA);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -39,23 +82,19 @@ export default function AppLayout() {
         </div>
 
         {/* AI Chat — top 75% */}
-        <div className="flex-[3] flex flex-col relative z-10 p-4 overflow-y-auto" style={{ background: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-            AI Chat
-          </div>
-          {/* Mock chat messages */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ padding: '8px 12px', background: '#141414', borderRadius: '10px 10px 10px 2px', border: '1px solid #1f1f1f', fontSize: 12, color: '#999', maxWidth: '90%' }}>
-              What does <code style={{ color: '#7eb8f7', fontSize: 11 }}>auth.ts</code> depend on?
-            </div>
-            <div style={{ padding: '8px 12px', background: 'rgba(59,130,246,0.06)', borderRadius: '10px 10px 2px 10px', border: '1px solid rgba(59,130,246,0.1)', fontSize: 12, color: '#b0b0b0', maxWidth: '90%', alignSelf: 'flex-end', lineHeight: 1.5 }}>
-              <strong style={{ color: '#7eb8f7' }}>auth.ts</strong> imports from <code style={{ color: '#10b981', fontSize: 11 }}>db.ts</code> and <code style={{ color: '#4b5563', fontSize: 11 }}>utils.ts</code>. It handles JWT token generation and session management.
-            </div>
-          </div>
+        <div className="flex-[3] relative z-10" style={{ minHeight: 0 }}>
+          <ChatPanel
+            messages={messages}
+            isLoading={isLoading}
+            sendMessage={sendMessage}
+          />
         </div>
 
         {/* Health Score — bottom 25% */}
-        <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-4" style={{ background: '#0a0a0a' }}>
+        <div
+          className="flex-1 flex flex-col items-center justify-center relative z-10 p-4"
+          style={{ background: '#0a0a0a', borderTop: '1px solid #1a1a1a' }}
+        >
           <div style={{ fontSize: 10, fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
             Health Score
           </div>

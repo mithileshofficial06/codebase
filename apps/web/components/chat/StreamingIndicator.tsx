@@ -1,18 +1,41 @@
 'use client';
 
-export default function StreamingIndicator() {
+import { motion } from 'framer-motion';
+
+export function StreamingIndicator() {
   return (
-    <div className="flex items-center gap-1.5 px-4 py-2">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ delay: 0.3 }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '8px 0',
+      }}
+    >
       {[0, 1, 2].map((i) => (
-        <div
+        <motion.div
           key={i}
-          className="w-1.5 h-1.5 bg-purple-400/50 rounded-full"
+          animate={{ scale: [0.5, 1, 0.5] }}
+          transition={{
+            duration: 0.8,
+            repeat: Infinity,
+            delay: i * 0.15,
+            ease: 'easeInOut',
+          }}
           style={{
-            animation: 'bounce 1.4s ease-in-out infinite',
-            animationDelay: `${i * 0.16}s`,
+            width: 4,
+            height: 4,
+            borderRadius: '50%',
+            backgroundColor: '#3b82f6',
           }}
         />
       ))}
-    </div>
+    </motion.div>
   );
 }
+
+export default StreamingIndicator;
