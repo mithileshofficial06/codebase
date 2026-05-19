@@ -4,14 +4,14 @@ import { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { useGraphStore } from '@/store/graphStore';
 
-const NODE_CONFIG = {
-  core:    { color: '#3b82f6', radius: 12, shadow: '0 0 10px 3px rgba(59,130,246,0.5)' },
-  hotspot: { color: '#ef4444', radius: 11, shadow: '0 0 8px 3px rgba(239,68,68,0.4)' },
-  stable:  { color: '#10b981', radius: 9,  shadow: '0 0 6px 2px rgba(16,185,129,0.3)' },
-  utility: { color: '#4b5563', radius: 7,  shadow: '0 0 3px 1px rgba(75,85,99,0.2)' },
-} as const;
+export type NodeType = 'core' | 'hotspot' | 'stable' | 'utility';
 
-export type NodeType = keyof typeof NODE_CONFIG;
+const TYPE_GLOW: Record<NodeType, string> = {
+  core:    '0 0 8px 2px rgba(59,130,246,0.4)',
+  hotspot: '0 0 10px 3px rgba(239,68,68,0.5)',
+  stable:  '0 0 6px 2px rgba(16,185,129,0.3)',
+  utility: '0 0 3px 1px rgba(75,85,99,0.2)',
+};
 
 function CustomNodeComponent({ id, data, selected }: any) {
   const [isHovered, setIsHovered] = useState(false);
@@ -19,24 +19,28 @@ function CustomNodeComponent({ id, data, selected }: any) {
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
 
   const nodeType: NodeType = data.nodeType || 'utility';
-  const cfg = NODE_CONFIG[nodeType];
+  const extColor: string = data.extColor || '#4b5563';
   const isDimmed = activeFilter !== 'all' && activeFilter !== nodeType;
 
-  const scale = selected ? 1.2 : isHovered ? 1.1 : isDimmed ? 0.9 : 1;
-  const opacity = isDimmed ? 0.08 : 1;
+  const scale = selected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.85 : 1;
+  const opacity = isDimmed ? 0.1 : 1;
+
+  // Adaptive radius based on connectivity
+  const connections = (data.dependencies?.length || 0) + (data.dependents?.length || 0);
+  const radius = Math.max(6, Math.min(14, 6 + connections * 1.5));
 
   return (
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => {
-        // Build a mock node object the store expects
         setSelectedNode({
           id,
           label: data.label,
           nodeType: data.nodeType,
           commitFrequency: data.commitFrequency,
           size: data.fileSize,
+          path: data.path,
           dependencies: data.dependencies || [],
           dependents: data.dependents || [],
         } as any);
@@ -51,7 +55,7 @@ function CustomNodeComponent({ id, data, selected }: any) {
         transition: 'transform 150ms ease, opacity 150ms ease',
       }}
     >
-      {/* Invisible handles for edge connections */}
+      {/* Invisible handles */}
       <Handle
         type="target"
         position={Position.Top}
@@ -62,14 +66,15 @@ function CustomNodeComponent({ id, data, selected }: any) {
       <div style={{ position: 'relative' }}>
         <div
           style={{
-            width: cfg.radius * 2,
-            height: cfg.radius * 2,
+            width: radius * 2,
+            height: radius * 2,
             borderRadius: '50%',
-            backgroundColor: `${cfg.color}e6`, // 90% opacity
-            boxShadow: isHovered
-              ? cfg.shadow.replace(/[\d.]+\)$/, (m) => `${parseFloat(m) * 1.5})`)
-              : cfg.shadow,
-            border: selected ? '2px solid #ffffff' : 'none',
+            backgroundColor: extColor,
+            boxShadow: isHovered || selected
+              ? TYPE_GLOW[nodeType]
+              : `0 0 4px 1px ${extColor}40`,
+            border: selected ? '2px solid #ffffff' : `1px solid ${extColor}80`,
+            transition: 'box-shadow 150ms ease',
           }}
         />
 
@@ -78,9 +83,9 @@ function CustomNodeComponent({ id, data, selected }: any) {
           <div
             style={{
               position: 'absolute',
-              inset: 0,
+              inset: -2,
               borderRadius: '50%',
-              border: `1.5px solid ${cfg.color}`,
+              border: `1.5px solid ${extColor}`,
               animation: 'hotspot-pulse 2s ease-out infinite',
               pointerEvents: 'none',
             }}
@@ -88,27 +93,51 @@ function CustomNodeComponent({ id, data, selected }: any) {
         )}
       </div>
 
-      {/* Label */}
+      {/* Label — always visible */}
       <div
         style={{
-          marginTop: 6,
+          marginTop: 4,
           fontFamily: 'var(--font-code, "Geist Mono", monospace)',
-          fontSize: 9,
-          color: selected ? '#ffffff' : isHovered ? '#cccccc' : '#888888',
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          padding: '1px 4px',
+          fontSize: 10,
+          fontWeight: 500,
+          color: selected ? '#ffffff' : isHovered ? '#e0e0e0' : '#aaaaaa',
+          backgroundColor: 'rgba(8,8,8,0.85)',
+          padding: '1px 5px',
           borderRadius: 3,
-          maxWidth: 80,
+          maxWidth: 120,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
           transition: 'color 150ms ease',
+          letterSpacing: '-0.01em',
         }}
-        title={data.label}
+        title={data.path || data.label}
       >
         {data.label}
       </div>
+
+      {/* Folder path shown on hover */}
+      {isHovered && data.folder && data.folder !== '_root' && (
+        <div
+          style={{
+            marginTop: 1,
+            fontSize: 8,
+            color: '#666',
+            fontFamily: 'var(--font-code, monospace)',
+            backgroundColor: 'rgba(8,8,8,0.9)',
+            padding: '0 4px',
+            borderRadius: 2,
+            maxWidth: 140,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}
+        >
+          {data.folder}
+        </div>
+      )}
 
       <Handle
         type="source"

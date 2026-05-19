@@ -27,23 +27,50 @@ import { NodeDetail } from './NodeDetail';
 const nodeTypes: NodeTypes = { custom: CustomNode };
 const edgeTypes: EdgeTypes = { custom: CustomEdge };
 
-const TYPE_COLORS: Record<string, string> = {
-  core: '#3b82f6',
-  hotspot: '#ef4444',
-  stable: '#10b981',
-  utility: '#4b5563',
+/* ─── File extension → color scheme ───────────────────────── */
+
+const EXT_COLORS: Record<string, string> = {
+  ts:   '#3b82f6', tsx:  '#60a5fa',
+  js:   '#f59e0b', jsx:  '#fbbf24',
+  py:   '#10b981',
+  css:  '#a855f7', scss: '#c084fc',
+  html: '#ef4444',
+  json: '#6b7280', yaml: '#6b7280', yml: '#6b7280',
+  md:   '#8b5cf6',
+  go:   '#06b6d4', rs:   '#f97316',
+  java: '#dc2626', rb:   '#ef4444',
 };
 
-/* ─── Classify node by commit frequency & connectivity ───── */
+function getExtColor(filePath: string): string {
+  const ext = filePath.split('.').pop()?.toLowerCase() || '';
+  return EXT_COLORS[ext] || '#4b5563';
+}
+
+/* ─── Classify node by folder depth + connectivity ────────── */
 
 function classifyNode(node: GraphNode): 'core' | 'hotspot' | 'stable' | 'utility' {
+  // Hotspot = high commit frequency
   if (node.commitFrequency >= 10) return 'hotspot';
+  // Core = entry points and highly connected files
   if (node.dependencies.length >= 3 || node.dependents.length >= 3) return 'core';
-  if (node.commitFrequency <= 2 && node.dependencies.length <= 1) return 'utility';
+  // Utility = config files, isolated files
+  const name = node.label.toLowerCase();
+  if (/^(\.env|\.gitignore|readme|license|package\.json|requirements\.txt|dockerfile|docker-compose)/i.test(name)) return 'utility';
+  if (node.commitFrequency <= 1 && node.dependencies.length === 0 && node.dependents.length === 0) return 'utility';
+  // Everything else is stable
   return 'stable';
 }
 
-/* ─── D3 layout computation (synchronous) ────────────────── */
+/* ─── Extract folder from path ────────────────────────────── */
+
+function getFolder(filePath: string): string {
+  const parts = filePath.split('/');
+  if (parts.length <= 1) return '_root';
+  // Use up to 2 levels: e.g. "backend/app" or "frontend/src"
+  return parts.slice(0, Math.min(parts.length - 1, 2)).join('/');
+}
+
+/* ─── D3 layout with folder clustering ────────────────────── */
 
 interface SimNode {
   id: string;
@@ -51,37 +78,78 @@ interface SimNode {
   y: number;
   vx?: number;
   vy?: number;
+  folder: string;
   index?: number;
 }
 
 function computeLayout(graphNodes: GraphNode[], graphEdges: GraphEdge[]) {
-  // Create simulation nodes with initial circular positions
-  const simNodes: SimNode[] = graphNodes.map((n, i) => {
-    const angle = (i / Math.max(graphNodes.length, 1)) * 2 * Math.PI;
-    const radius = Math.min(200, graphNodes.length * 15);
-    return { id: n.id, x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+  // Build folder groups
+  const folderMap = new Map<string, number[]>();
+  graphNodes.forEach((n, i) => {
+    const folder = getFolder(n.path);
+    if (!folderMap.has(folder)) folderMap.set(folder, []);
+    folderMap.get(folder)!.push(i);
   });
 
-  // Create simulation links — only include edges where both source and target exist
+  // Assign cluster centers in a circle for each folder
+  const folders = Array.from(folderMap.keys());
+  const clusterRadius = Math.max(200, folders.length * 50);
+  const clusterCenters: Record<string, { x: number; y: number }> = {};
+  folders.forEach((f, i) => {
+    const angle = (i / folders.length) * 2 * Math.PI;
+    clusterCenters[f] = {
+      x: Math.cos(angle) * clusterRadius,
+      y: Math.sin(angle) * clusterRadius,
+    };
+  });
+
+  // Create simulation nodes with positions near their cluster center
+  const simNodes: SimNode[] = graphNodes.map((n, i) => {
+    const folder = getFolder(n.path);
+    const center = clusterCenters[folder];
+    // Slight jitter within cluster
+    const jitter = 30;
+    return {
+      id: n.id,
+      x: center.x + (Math.random() - 0.5) * jitter,
+      y: center.y + (Math.random() - 0.5) * jitter,
+      folder,
+    };
+  });
+
+  // Valid edges
   const nodeIdSet = new Set(graphNodes.map(n => n.id));
   const validEdges = graphEdges.filter(e => nodeIdSet.has(e.source) && nodeIdSet.has(e.target));
+  const simLinks = validEdges.map(e => ({ source: e.source, target: e.target }));
 
-  const simLinks = validEdges.map(e => ({
-    source: e.source,
-    target: e.target,
-  }));
+  // Adaptive force parameters based on node count
+  const nodeCount = graphNodes.length;
+  const chargeStrength = nodeCount > 100 ? -120 : nodeCount > 50 ? -200 : -400;
+  const collideRadius = nodeCount > 100 ? 25 : nodeCount > 50 ? 35 : 50;
+  const linkDistance = nodeCount > 100 ? 60 : nodeCount > 50 ? 100 : 150;
 
-  // Run D3 force simulation synchronously
+  // Custom clustering force — pull nodes toward their folder center
+  function clusterForce(alpha: number) {
+    for (const node of simNodes) {
+      const center = clusterCenters[node.folder];
+      if (center) {
+        const strength = 0.3 * alpha;
+        node.vx = (node.vx || 0) + (center.x - node.x) * strength;
+        node.vy = (node.vy || 0) + (center.y - node.y) * strength;
+      }
+    }
+  }
+
+  // Run D3 force simulation
   const simulation = d3.forceSimulation<SimNode>(simNodes)
-    .force('link', d3.forceLink(simLinks).id((d: any) => d.id).distance(180).strength(1.0).iterations(3))
-    .force('charge', d3.forceManyBody().strength(-500))
-    .force('center', d3.forceCenter(0, 0))
-    .force('collide', d3.forceCollide().radius(55))
-    .force('x', d3.forceX(0).strength(0.05))
-    .force('y', d3.forceY(0).strength(0.05))
+    .force('link', d3.forceLink(simLinks).id((d: any) => d.id).distance(linkDistance).strength(0.8))
+    .force('charge', d3.forceManyBody().strength(chargeStrength))
+    .force('center', d3.forceCenter(0, 0).strength(0.03))
+    .force('collide', d3.forceCollide().radius(collideRadius))
+    .force('cluster', clusterForce as any)
     .stop();
 
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 400; i++) {
     simulation.tick();
   }
 
@@ -89,6 +157,8 @@ function computeLayout(graphNodes: GraphNode[], graphEdges: GraphEdge[]) {
   const rfNodes: Node[] = simNodes.map((sn) => {
     const raw = graphNodes.find(n => n.id === sn.id)!;
     const nodeType = classifyNode(raw);
+    const extColor = getExtColor(raw.path);
+
     return {
       id: sn.id,
       type: 'custom',
@@ -100,8 +170,10 @@ function computeLayout(graphNodes: GraphNode[], graphEdges: GraphEdge[]) {
         commitFrequency: raw.commitFrequency,
         fileSize: raw.size,
         path: raw.path,
+        folder: sn.folder,
         dependencies: raw.dependencies,
         dependents: raw.dependents,
+        extColor,
       },
     };
   });
@@ -110,8 +182,8 @@ function computeLayout(graphNodes: GraphNode[], graphEdges: GraphEdge[]) {
   const rfEdges: Edge[] = validEdges.map((e) => {
     const srcNode = graphNodes.find(n => n.id === e.source);
     const tgtNode = graphNodes.find(n => n.id === e.target);
-    const srcType = srcNode ? classifyNode(srcNode) : 'utility';
-    const tgtType = tgtNode ? classifyNode(tgtNode) : 'utility';
+    const srcColor = srcNode ? getExtColor(srcNode.path) : '#4b5563';
+    const tgtColor = tgtNode ? getExtColor(tgtNode.path) : '#4b5563';
 
     return {
       id: e.id,
@@ -120,13 +192,13 @@ function computeLayout(graphNodes: GraphNode[], graphEdges: GraphEdge[]) {
       type: 'custom',
       data: {
         weight: e.weight,
-        sourceColor: TYPE_COLORS[srcType],
-        targetColor: TYPE_COLORS[tgtType],
+        sourceColor: srcColor,
+        targetColor: tgtColor,
       },
     };
   });
 
-  return { rfNodes, rfEdges };
+  return { rfNodes, rfEdges, clusterCenters };
 }
 
 /* ─── Props ───────────────────────────────────────────────── */
@@ -136,10 +208,10 @@ interface GraphCanvasProps {
   edges: GraphEdge[];
 }
 
-/* ─── Inner graph (must be inside ReactFlowProvider) ──────── */
+/* ─── Inner graph ─────────────────────────────────────────── */
 
 function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasProps) {
-  const { rfNodes, rfEdges } = useMemo(
+  const { rfNodes, rfEdges, clusterCenters } = useMemo(
     () => computeLayout(graphNodes, graphEdges),
     [graphNodes, graphEdges]
   );
@@ -147,7 +219,7 @@ function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasP
   const [nodes, , onNodesChange] = useNodesState(rfNodes);
   const [edges, , onEdgesChange] = useEdgesState(rfEdges);
 
-  // Sync nodes to store for NodeDetail to reference
+  // Sync to store for NodeDetail
   const { setNodes: setStoreNodes } = useGraphStore();
   useMemo(() => {
     const storeNodes = rfNodes.map(n => ({
@@ -164,47 +236,55 @@ function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasP
   }, [rfNodes, setStoreNodes]);
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      fitView
-      fitViewOptions={{ padding: 0.15 }}
-      nodesDraggable
-      nodesConnectable={false}
-      edgesUpdatable={false}
-      connectOnClick={false}
-      zoomOnScroll
-      minZoom={0.1}
-      maxZoom={4}
-      proOptions={{ hideAttribution: true }}
-      style={{ background: '#080808' }}
-    >
-      <Background variant={'dots' as any} gap={24} size={1} color="#1a1a1a" />
-      <Controls
-        showInteractive={false}
-        style={{
-          bottom: 16,
-          right: 16,
-          left: 'auto',
-          background: '#080808',
-          border: '1px solid #1f1f1f',
-          borderRadius: 8,
-        }}
+    <>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        nodesDraggable
+        nodesConnectable={false}
+        edgesUpdatable={false}
+        connectOnClick={false}
+        zoomOnScroll
+        minZoom={0.05}
+        maxZoom={4}
+        proOptions={{ hideAttribution: true }}
+        style={{ background: '#080808' }}
+      >
+        <Background variant={'dots' as any} gap={24} size={1} color="#1a1a1a" />
+        <Controls
+          showInteractive={false}
+          style={{
+            bottom: 16,
+            right: 16,
+            left: 'auto',
+            background: '#080808',
+            border: '1px solid #1f1f1f',
+            borderRadius: 8,
+          }}
+        />
+        <MiniMap
+          nodeColor={(n) => n.data?.extColor || '#4b5563'}
+          style={{ background: '#0d0d0d', bottom: 60, left: 16, width: 160, height: 100 }}
+          maskColor="rgba(0,0,0,0.8)"
+        />
+      </ReactFlow>
+
+      {/* Folder labels overlay */}
+      <div
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}
+        aria-hidden="true"
       />
-      <MiniMap
-        nodeColor={(n) => TYPE_COLORS[n.data?.nodeType] || '#4b5563'}
-        style={{ background: '#0d0d0d', bottom: 60, left: 16, width: 140, height: 90 }}
-        maskColor="rgba(0,0,0,0.8)"
-      />
-    </ReactFlow>
+    </>
   );
 }
 
-/* ─── Outer wrapper (provides ReactFlowProvider) ─────────── */
+/* ─── Outer wrapper ───────────────────────────────────────── */
 
 export function GraphCanvas({ nodes, edges }: GraphCanvasProps) {
   return (
