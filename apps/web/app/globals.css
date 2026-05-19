@@ -19,8 +19,8 @@
   --border-glow: rgba(124, 58, 237, 0.3);
   --glow-purple: rgba(124, 58, 237, 0.15);
   --glow-cyan: rgba(0, 217, 255, 0.1);
-  --font-heading: var(--font-space, 'Space Grotesk', system-ui, sans-serif);
-  --font-body: var(--font-inter, 'Inter', system-ui, sans-serif);
+  --font-heading: var(--font-jakarta, 'Plus Jakarta Sans', system-ui, sans-serif);
+  --font-body: var(--font-outfit, 'Outfit', system-ui, sans-serif);
   --font-code: var(--font-mono, 'JetBrains Mono', monospace);
 }
 
@@ -84,7 +84,7 @@ body {
   letter-spacing: -0.03em; color: var(--text-primary);
 }
 .nav-cta-btn {
-  padding: 0.5rem 1.25rem; border-radius: 8px;
+  padding: 0.5rem 1.25rem; border-radius: 0px;
   font-size: 0.8rem; font-weight: 600; border: none; cursor: pointer;
   background: linear-gradient(135deg, var(--purple), var(--purple-light));
   color: #fff; transition: all 0.2s ease;

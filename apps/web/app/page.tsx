@@ -51,9 +51,8 @@ function StickyNav() {
       <div className="nav-links">
         <button onClick={() => scrollTo('how-it-works')}>How it works</button>
         <button onClick={() => scrollTo('features')}>Features</button>
-        <button onClick={() => scrollTo('pricing')}>Pricing</button>
       </div>
-      <button className="nav-cta-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Try it free</button>
+      <button className="nav-cta-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Kick Start</button>
     </nav>
   );
 }
@@ -64,13 +63,11 @@ function TerminalPreview() {
   const terminalLines = useRef([
     '$ codemap analyze vercel/next.js',
     '',
-    '  ⏳ Cloning repository...',
-    '  ✓ 2,847 files scanned',
-    '  ✓ Dependency graph built (1,203 nodes)',
-    '  ✓ Health score: 74/100',
-    '  ✓ AI analysis ready',
-    '',
-    '  → Open dashboard: localhost:3000/analyze',
+    '  [INIT] Cloning repository...',
+    '  [INFO] 2,847 files scanned',
+    '  [INFO] Dependency graph built (1,203 nodes)',
+    '  [INFO] Health score: 74/100',
+    '  [DONE] AI analysis ready',
   ]);
 
   useEffect(() => {
@@ -89,10 +86,9 @@ function TerminalPreview() {
 
   const getColor = (line: string) => {
     if (!line) return '#94A3B8';
-    if (line.includes('✓')) return '#34d399';
-    if (line.includes('⏳')) return '#fbbf24';
+    if (line.includes('[INFO]') || line.includes('[DONE]')) return '#34d399';
+    if (line.includes('[INIT]')) return '#fbbf24';
     if (line.includes('$')) return '#A855F7';
-    if (line.includes('→')) return '#00D9FF';
     return '#94A3B8';
   };
 
@@ -248,9 +244,6 @@ export default function Home() {
                 {/* Left — Text */}
                 <div className="flex-1 max-w-xl">
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-                    <div className="section-badge" style={{ marginBottom: '1.5rem' }}>
-                      <Zap size={12} /> AI-Powered Analysis
-                    </div>
                     <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.08] tracking-[-0.04em] mb-5" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>
                       <span className="gradient-text">Understand any</span><br />
                       <span className="gradient-text-accent">codebase</span>{' '}
@@ -327,41 +320,6 @@ export default function Home() {
                 <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>Powered by Gemini. Answers reference real file names and dependency relationships — not generic advice.</p>
                 <ChatPreview />
               </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="glow-separator" />
-
-        {/* ═══ SOCIAL PROOF ═══ */}
-        <section className="py-16 px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-10 fade-up">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <Users size={16} color="#A855F7" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94A3B8' }}>Trusted by developers</span>
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="github-stars-badge">
-                  <Star size={12} /> 1.2k stars on GitHub
-                </a>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 fade-up" style={{ transitionDelay: '100ms' }}>
-              {[
-                { initials: 'AK', name: 'Arjun K.', role: 'Staff Engineer', quote: 'CodeMap saved us hours of onboarding. New devs can explore our monorepo visually on day one.' },
-                { initials: 'SM', name: 'Sarah M.', role: 'Tech Lead', quote: 'The hotspot detection caught a god-file we missed for months. The AI chat is impressively accurate.' },
-                { initials: 'RP', name: 'Ryan P.', role: 'Open Source Maintainer', quote: 'I paste any PR contributor\'s fork and immediately see what they changed across the dependency graph.' },
-              ].map((t, i) => (
-                <div key={i} className="bento-card" style={{ padding: '1.5rem' }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="testimonial-avatar">{t.initials}</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#fff' }}>{t.name}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{t.role}</div>
-                    </div>
-                  </div>
-                  <p style={{ color: '#94A3B8', fontSize: '0.82rem', lineHeight: 1.7, fontStyle: 'italic' }}>&ldquo;{t.quote}&rdquo;</p>
-                </div>
-              ))}
             </div>
           </div>
         </section>
