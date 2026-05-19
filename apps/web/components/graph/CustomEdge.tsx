@@ -1,13 +1,7 @@
 'use client';
 
-import { memo, useState, useId } from 'react';
-import { BaseEdge, type EdgeProps, getSmoothStepPath } from 'reactflow';
-
-interface CustomEdgeData {
-  weight: number;
-  sourceColor: string;
-  targetColor: string;
-}
+import { memo, useState } from 'react';
+import { EdgeProps, getBezierPath } from 'reactflow';
 
 function CustomEdgeComponent({
   id,
@@ -18,66 +12,97 @@ function CustomEdgeComponent({
   sourcePosition,
   targetPosition,
   data,
-  markerEnd,
-}: EdgeProps<CustomEdgeData>) {
-  const [hovered, setHovered] = useState(false);
-  const gradientId = useId();
+}: EdgeProps) {
+  const [isHovered, setIsHovered] = useState(false);
 
-  const [edgePath] = getSmoothStepPath({
+  const [edgePath] = getBezierPath({
     sourceX,
     sourceY,
     targetX,
     targetY,
     sourcePosition,
     targetPosition,
-    borderRadius: 16,
   });
 
-  const strokeWidth = hovered ? 2.5 : 1.5;
-  const opacity = hovered ? 0.7 : 0.2;
+  const weight = data?.weight || 1;
+  const sourceColor = data?.sourceColor || '#4b5563';
+  const targetColor = data?.targetColor || '#4b5563';
+
+  // Stroke width based on weight
+  const baseWidth = weight >= 4 ? 2.5 : weight === 3 ? 2 : weight === 2 ? 1.5 : 1;
+  const strokeWidth = isHovered ? baseWidth + 1 : baseWidth;
+  const opacity = isHovered ? 1.0 : 0.5;
+
+  const gradientId = `edge-gradient-${id}`;
+  const pathId = `edge-path-${id}`;
+  const markerId = `edge-marker-${id}`;
 
   return (
     <g
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{ cursor: 'pointer' }}
     >
-      {/* Gradient definition */}
       <defs>
-        <linearGradient id={gradientId} gradientUnits="userSpaceOnUse" x1={sourceX} y1={sourceY} x2={targetX} y2={targetY}>
-          <stop offset="0%" stopColor={data?.sourceColor || '#8b5cf6'} stopOpacity={opacity} />
-          <stop offset="100%" stopColor={data?.targetColor || '#3b82f6'} stopOpacity={opacity} />
+        {/* Gradient from source to target color */}
+        <linearGradient
+          id={gradientId}
+          gradientUnits="userSpaceOnUse"
+          x1={sourceX}
+          y1={sourceY}
+          x2={targetX}
+          y2={targetY}
+        >
+          <stop offset="0%" stopColor={sourceColor} stopOpacity={0.6} />
+          <stop offset="100%" stopColor={targetColor} stopOpacity={0.6} />
         </linearGradient>
+
+        {/* Arrowhead marker */}
+        <marker
+          id={markerId}
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="6"
+          markerHeight="6"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill={targetColor} opacity={0.6} />
+        </marker>
       </defs>
 
-      {/* Invisible wider path for easier hovering */}
+      {/* Invisible fat path for easier hover target */}
       <path
         d={edgePath}
         fill="none"
         stroke="transparent"
         strokeWidth={20}
-        style={{ cursor: 'pointer' }}
       />
 
-      {/* Visible edge */}
+      {/* Visible edge path */}
       <path
+        id={pathId}
         d={edgePath}
         fill="none"
         stroke={`url(#${gradientId})`}
         strokeWidth={strokeWidth}
-        style={{
-          transition: 'stroke-width 0.2s, opacity 0.2s',
-          filter: hovered ? `drop-shadow(0 0 4px ${data?.sourceColor || '#8b5cf6'}40)` : 'none',
-        }}
+        opacity={opacity}
+        markerEnd={`url(#${markerId})`}
+        style={{ transition: 'stroke-width 200ms ease, opacity 200ms ease' }}
       />
 
-      {/* Particle on hover */}
-      {hovered && (
-        <circle r="3" fill={data?.sourceColor || '#8b5cf6'} opacity={0.8}>
-          <animateMotion dur="2s" repeatCount="indefinite" path={edgePath} />
+      {/* Animated particle on hover */}
+      {isHovered && (
+        <circle r="3" fill={sourceColor} opacity={0.9}>
+          <animateMotion dur="1s" repeatCount="indefinite">
+            <mpath href={`#${pathId}`} />
+          </animateMotion>
         </circle>
       )}
     </g>
   );
 }
 
-export default memo(CustomEdgeComponent);
+export const CustomEdge = memo(CustomEdgeComponent);
+CustomEdge.displayName = 'CustomEdge';
+export default CustomEdge;

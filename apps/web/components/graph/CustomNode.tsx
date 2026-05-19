@@ -1,108 +1,131 @@
 'use client';
 
-import { memo } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import { memo, useState } from 'react';
+import { Handle, Position } from 'reactflow';
 import { useGraphStore } from '@/store/graphStore';
 
-interface CustomNodeData {
-  label: string;
-  path: string;
-  fileType: string;
-  color: string;
-  depCount: number;
-  dependentCount: number;
-  commitFrequency: number;
-  isHotspot: boolean;
-}
+const NODE_CONFIG = {
+  core:    { color: '#3b82f6', radius: 16, shadow: '0 0 12px 3px rgba(59,130,246,0.5)' },
+  hotspot: { color: '#ef4444', radius: 14, shadow: '0 0 10px 3px rgba(239,68,68,0.4)' },
+  stable:  { color: '#10b981', radius: 11, shadow: '0 0 8px 2px rgba(16,185,129,0.3)' },
+  utility: { color: '#4b5563', radius: 9,  shadow: '0 0 4px 1px rgba(75,85,99,0.2)' },
+} as const;
 
-function CustomNodeComponent({ data, id }: NodeProps<CustomNodeData>) {
-  const hoveredNodeId = useGraphStore((s) => s.hoveredNodeId);
-  const setHoveredNode = useGraphStore((s) => s.setHoveredNode);
-  const isHovered = hoveredNodeId === id;
+export type NodeType = keyof typeof NODE_CONFIG;
 
-  const nodeSize = Math.max(36, Math.min(56, 36 + (data.depCount + data.dependentCount) * 2));
-  const glowIntensity = isHovered ? 0.6 : 0.25;
-  const glowRadius = isHovered ? 12 : 6;
+function CustomNodeComponent({ id, data, selected }: any) {
+  const [isHovered, setIsHovered] = useState(false);
+  const activeFilter = useGraphStore((s) => s.activeFilter);
+  const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
+
+  const nodeType: NodeType = data.nodeType || 'utility';
+  const cfg = NODE_CONFIG[nodeType];
+  const isDimmed = activeFilter !== 'all' && activeFilter !== nodeType;
+
+  const scale = selected ? 1.2 : isHovered ? 1.1 : isDimmed ? 0.9 : 1;
+  const opacity = isDimmed ? 0.08 : 1;
 
   return (
     <div
-      onMouseEnter={() => setHoveredNode(id)}
-      onMouseLeave={() => setHoveredNode(null)}
-      className="relative group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => {
+        // Build a mock node object the store expects
+        setSelectedNode({
+          id,
+          label: data.label,
+          nodeType: data.nodeType,
+          commitFrequency: data.commitFrequency,
+          size: data.fileSize,
+          dependencies: data.dependencies || [],
+          dependents: data.dependents || [],
+        } as any);
+      }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        cursor: 'pointer',
+        transform: `scale(${scale})`,
+        opacity,
+        transition: 'transform 150ms ease, opacity 150ms ease',
+      }}
     >
-      {/* Hotspot pulse rings */}
-      {data.isHotspot && (
-        <>
-          <div
-            className="absolute inset-0 rounded-lg pulse-ring"
-            style={{
-              border: `1px solid ${data.color}30`,
-              margin: -4,
-              borderRadius: 12,
-            }}
-          />
-          <div
-            className="absolute inset-0 rounded-lg pulse-ring"
-            style={{
-              border: `1px solid ${data.color}20`,
-              margin: -4,
-              borderRadius: 12,
-              animationDelay: '1s',
-            }}
-          />
-        </>
-      )}
+      {/* Invisible handles for edge connections */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ opacity: 0, width: 1, height: 1, background: 'transparent', border: 'none' }}
+      />
 
-      {/* Node body */}
-      <div
-        className="relative px-3 py-2 rounded-lg cursor-pointer transition-all duration-200"
-        style={{
-          background: `${data.color}15`,
-          border: `1px solid ${data.color}${isHovered ? '60' : '30'}`,
-          boxShadow: `0 0 ${glowRadius}px ${data.color}${Math.round(glowIntensity * 255).toString(16).padStart(2, '0')}`,
-          minWidth: nodeSize,
-          backdropFilter: 'blur(8px)',
-        }}
-      >
-        <Handle
-          type="target"
-          position={Position.Top}
-          className="!w-1.5 !h-1.5 !bg-white/20 !border-0 !-top-1"
+      {/* Node circle */}
+      <div style={{ position: 'relative' }}>
+        <div
+          style={{
+            width: cfg.radius * 2,
+            height: cfg.radius * 2,
+            borderRadius: '50%',
+            backgroundColor: `${cfg.color}e6`, // 90% opacity
+            boxShadow: isHovered
+              ? cfg.shadow.replace(/[\d.]+\)$/, (m) => `${parseFloat(m) * 1.5})`)
+              : cfg.shadow,
+            border: selected ? '2px solid #ffffff' : 'none',
+          }}
         />
 
-        {/* File type dot */}
-        <div className="flex items-center gap-2">
+        {/* Hotspot pulsing ring */}
+        {nodeType === 'hotspot' && (
           <div
-            className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ background: data.color, boxShadow: `0 0 4px ${data.color}80` }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              border: `1.5px solid ${cfg.color}`,
+              animation: 'hotspot-pulse 2s ease-out infinite',
+              pointerEvents: 'none',
+            }}
           />
-          <span className="text-xs text-white/80 font-medium truncate max-w-[120px]">
-            {data.label}
-          </span>
-        </div>
-
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          className="!w-1.5 !h-1.5 !bg-white/20 !border-0 !-bottom-1"
-        />
+        )}
       </div>
 
-      {/* Hover tooltip */}
-      {isHovered && (
-        <div
-          className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-md
-                     bg-black/90 border border-white/10 text-xs text-white/70 whitespace-nowrap
-                     pointer-events-none z-50"
-        >
-          {data.path}
-          <div className="text-[10px] text-white/40 mt-0.5">
-            {data.depCount} deps · {data.dependentCount} dependents
-          </div>
-        </div>
-      )}
+      {/* Label */}
+      <div
+        style={{
+          marginTop: 6,
+          fontFamily: 'var(--font-code, "Geist Mono", monospace)',
+          fontSize: 9,
+          color: selected ? '#ffffff' : isHovered ? '#cccccc' : '#888888',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          padding: '1px 4px',
+          borderRadius: 3,
+          maxWidth: 80,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          transition: 'color 150ms ease',
+        }}
+        title={data.label}
+      >
+        {data.label}
+      </div>
+
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ opacity: 0, width: 1, height: 1, background: 'transparent', border: 'none' }}
+      />
+
+      <style>{`
+        @keyframes hotspot-pulse {
+          0% { transform: scale(1); opacity: 0.8; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
 
-export default memo(CustomNodeComponent);
+export const CustomNode = memo(CustomNodeComponent);
+CustomNode.displayName = 'CustomNode';
+export default CustomNode;
