@@ -3,6 +3,7 @@
 import { memo, useState } from 'react';
 import { EdgeProps, getBezierPath } from 'reactflow';
 import { useGraphStore } from '@/store/graphStore';
+import { useFlowStore } from '@/store/flowStore';
 
 function CustomEdgeComponent({
   id,
@@ -18,6 +19,30 @@ function CustomEdgeComponent({
 }: EdgeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const focusedNodeId = useGraphStore((s) => s.focusedNodeId);
+  const { activeFlow, currentStepIndex, playbackState } = useFlowStore();
+
+  const weight = data?.weight || 1;
+  const sourceColor = data?.sourceColor || '#4b5563';
+  const targetColor = data?.targetColor || '#4b5563';
+  const isClusterEdge = data?.isClusterEdge || false;
+
+  // Focus mode logic
+  const isConnectedToFocus = focusedNodeId && (source === focusedNodeId || target === focusedNodeId);
+  const shouldDim = focusedNodeId && !isConnectedToFocus;
+  
+  // Flow logic
+  const isFlowActive = playbackState !== 'idle' && activeFlow;
+  const currentStep = activeFlow?.steps[currentStepIndex];
+  const nextStep = activeFlow?.steps[currentStepIndex + 1];
+  const isCurrentFlowEdge = currentStep && nextStep && 
+    ((source === currentStep.nodeId && target === nextStep.nodeId) ||
+     (target === currentStep.nodeId && source === nextStep.nodeId));
+  const isInFlowPath = activeFlow?.steps.some((step, i) => {
+    const next = activeFlow.steps[i + 1];
+    return next && ((source === step.nodeId && target === next.nodeId) || 
+                    (target === step.nodeId && source === next.nodeId));
+  });
+  const shouldDimFlow = isFlowActive && !isInFlowPath;
 
   const [edgePath] = getBezierPath({
     sourceX,
@@ -28,15 +53,6 @@ function CustomEdgeComponent({
     targetPosition,
   });
 
-  const weight = data?.weight || 1;
-  const sourceColor = data?.sourceColor || '#4b5563';
-  const targetColor = data?.targetColor || '#4b5563';
-  const isClusterEdge = data?.isClusterEdge || false;
-
-  // Focus mode logic
-  const isConnectedToFocus = focusedNodeId && (source === focusedNodeId || target === focusedNodeId);
-  const shouldDim = focusedNodeId && !isConnectedToFocus;
-
   // Stroke width based on weight — cluster edges are thicker
   let baseWidth: number;
   if (isClusterEdge) {
@@ -45,15 +61,15 @@ function CustomEdgeComponent({
     baseWidth = weight >= 4 ? 2.5 : weight === 3 ? 2 : weight === 2 ? 1.5 : 1;
   }
 
-  const strokeWidth = isHovered ? baseWidth + 1.5 : baseWidth;
-  const opacity = shouldDim ? 0.05 : isHovered ? 1.0 : isClusterEdge ? 0.6 : 0.4;
+  const strokeWidth = isCurrentFlowEdge ? baseWidth + 2 : isHovered ? baseWidth + 1.5 : baseWidth;
+  const opacity = shouldDimFlow ? 0.03 : shouldDim ? 0.05 : isCurrentFlowEdge ? 1 : isHovered ? 1.0 : isClusterEdge ? 0.6 : 0.4;
 
   const gradientId = `edge-gradient-${id}`;
   const pathId = `edge-path-${id}`;
   const markerId = `edge-marker-${id}`;
 
-  // Show flowing particles on cluster edges always, file edges on hover or when connected to focus
-  const showParticles = isClusterEdge || isHovered || isConnectedToFocus;
+  // Show flowing particles on cluster edges always, file edges on hover or when connected to focus or during flow
+  const showParticles = isClusterEdge || isHovered || isConnectedToFocus || isCurrentFlowEdge;
 
   return (
     <g
@@ -90,14 +106,14 @@ function CustomEdgeComponent({
       {/* Invisible fat path for easier hover */}
       <path d={edgePath} fill="none" stroke="transparent" strokeWidth={20} />
 
-      {/* Glow path for cluster edges */}
-      {isClusterEdge && (
+      {/* Glow path for cluster edges and current flow edge */}
+      {(isClusterEdge || isCurrentFlowEdge) && (
         <path
           d={edgePath}
           fill="none"
           stroke={`url(#${gradientId})`}
-          strokeWidth={baseWidth + 4}
-          opacity={0.1}
+          strokeWidth={baseWidth + (isCurrentFlowEdge ? 8 : 4)}
+          opacity={isCurrentFlowEdge ? 0.3 : 0.1}
           style={{ filter: 'blur(3px)' }}
         />
       )}
@@ -117,14 +133,14 @@ function CustomEdgeComponent({
       {/* Flowing particles */}
       {showParticles && (
         <>
-          <circle r={isClusterEdge ? 3.5 : 2.5} fill={sourceColor} opacity={0.9}>
-            <animateMotion dur={isClusterEdge ? '2s' : '1s'} repeatCount="indefinite">
+          <circle r={isCurrentFlowEdge ? 4 : isClusterEdge ? 3.5 : 2.5} fill={sourceColor} opacity={isCurrentFlowEdge ? 1 : 0.9}>
+            <animateMotion dur={isCurrentFlowEdge ? '1.5s' : isClusterEdge ? '2s' : '1s'} repeatCount="indefinite">
               <mpath href={`#${pathId}`} />
             </animateMotion>
           </circle>
-          {isClusterEdge && (
-            <circle r={2.5} fill={targetColor} opacity={0.6}>
-              <animateMotion dur="2s" begin="1s" repeatCount="indefinite">
+          {(isClusterEdge || isCurrentFlowEdge) && (
+            <circle r={isCurrentFlowEdge ? 3 : 2.5} fill={targetColor} opacity={0.6}>
+              <animateMotion dur={isCurrentFlowEdge ? '1.5s' : '2s'} begin={isCurrentFlowEdge ? '0.5s' : '1s'} repeatCount="indefinite">
                 <mpath href={`#${pathId}`} />
               </animateMotion>
             </circle>

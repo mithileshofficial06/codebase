@@ -3,6 +3,7 @@
 import { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { useGraphStore } from '@/store/graphStore';
+import { useFlowStore } from '@/store/flowStore';
 
 export type NodeType = 'core' | 'hotspot' | 'stable' | 'utility';
 
@@ -19,9 +20,20 @@ function CustomNodeComponent({ id, data, selected }: any) {
   const focusedNodeId = useGraphStore((s) => s.focusedNodeId);
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
   const setFocusedNode = useGraphStore((s) => s.setFocusedNode);
+  
+  // Flow visualization state
+  const { activeFlow, currentStepIndex, playbackState } = useFlowStore();
 
   const nodeType: NodeType = data.nodeType || 'utility';
   const extColor: string = data.extColor || '#4b5563';
+  
+  // Flow logic
+  const isInFlow = activeFlow?.steps.some(s => s.nodeId === id);
+  const currentFlowStep = activeFlow?.steps[currentStepIndex];
+  const isCurrentStep = currentFlowStep?.nodeId === id;
+  const isPastStep = activeFlow?.steps.slice(0, currentStepIndex).some(s => s.nodeId === id);
+  const isFutureStep = activeFlow?.steps.slice(currentStepIndex + 1).some(s => s.nodeId === id);
+  const isFlowActive = playbackState !== 'idle' && activeFlow;
   
   // Focus mode logic
   const isFocused = focusedNodeId === id;
@@ -35,11 +47,11 @@ function CustomNodeComponent({ id, data, selected }: any) {
   const isFilterDimmed = activeFilter !== 'all' && activeFilter !== nodeType;
   
   // Combined dimming logic
-  const isDimmed = shouldDim || isFilterDimmed;
+  const isDimmed = shouldDim || isFilterDimmed || (isFlowActive && !isInFlow);
 
-  const scale = isFocused ? 1.3 : selected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.85 : 1;
-  const opacity = isDimmed ? 0.12 : isConnected ? 0.7 : 1;
-  const zIndex = isFocused ? 100 : selected ? 50 : isHovered ? 10 : 1;
+  const scale = isCurrentStep ? 1.4 : isFocused ? 1.3 : selected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.85 : 1;
+  const opacity = isDimmed ? 0.08 : isPastStep ? 0.5 : isFutureStep ? 0.3 : isConnected ? 0.7 : 1;
+  const zIndex = isCurrentStep ? 200 : isFocused ? 100 : selected ? 50 : isHovered ? 10 : 1;
 
   // Adaptive radius based on connectivity
   const connections = (data.dependencies?.length || 0) + (data.dependents?.length || 0);
@@ -86,8 +98,35 @@ function CustomNodeComponent({ id, data, selected }: any) {
 
       {/* Node circle */}
       <div style={{ position: 'relative' }}>
+        {/* Flow current step mega glow */}
+        {isCurrentStep && (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                inset: -20,
+                borderRadius: '50%',
+                background: `radial-gradient(circle, ${extColor}80 0%, transparent 70%)`,
+                filter: 'blur(12px)',
+                animation: 'flow-pulse 1.5s ease-in-out infinite',
+                pointerEvents: 'none',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: -8,
+                borderRadius: '50%',
+                border: `3px solid ${extColor}`,
+                animation: 'flow-ring-pulse 2s ease-out infinite',
+                pointerEvents: 'none',
+              }}
+            />
+          </>
+        )}
+        
         {/* Focus glow bloom */}
-        {isFocused && (
+        {isFocused && !isCurrentStep && (
           <div
             style={{
               position: 'absolute',
@@ -107,12 +146,16 @@ function CustomNodeComponent({ id, data, selected }: any) {
             height: radius * 2,
             borderRadius: '50%',
             backgroundColor: extColor,
-            boxShadow: isFocused
+            boxShadow: isCurrentStep
+              ? `0 0 30px 10px ${extColor}, ${TYPE_GLOW[nodeType]}`
+              : isFocused
               ? `0 0 20px 6px ${extColor}80, ${TYPE_GLOW[nodeType]}`
               : isHovered || selected
               ? TYPE_GLOW[nodeType]
               : `0 0 4px 1px ${extColor}40`,
-            border: isFocused 
+            border: isCurrentStep
+              ? `4px solid ${extColor}`
+              : isFocused 
               ? `3px solid ${extColor}` 
               : selected 
               ? '2px solid #ffffff' 
@@ -196,6 +239,14 @@ function CustomNodeComponent({ id, data, selected }: any) {
         @keyframes focus-pulse {
           0%, 100% { opacity: 0.6; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.1); }
+        }
+        @keyframes flow-pulse {
+          0%, 100% { opacity: 0.8; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+        @keyframes flow-ring-pulse {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(2.5); opacity: 0; }
         }
       `}</style>
     </div>

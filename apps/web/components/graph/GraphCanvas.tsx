@@ -18,7 +18,9 @@ import 'reactflow/dist/style.css';
 import * as d3 from 'd3-force';
 import { GraphNode, GraphEdge } from '@codemap/shared';
 import { useGraphStore } from '@/store/graphStore';
+import { useFlowStore } from '@/store/flowStore';
 import { buildArchitecture, ClusterNode as ClusterNodeType, ClusterEdge } from '@/lib/architectureEngine';
+import { detectFlows } from '@/lib/flowDetection';
 import { CustomNode } from './CustomNode';
 import { CustomEdge } from './CustomEdge';
 import ClusterNodeComp from './ClusterNode';
@@ -27,6 +29,8 @@ import { NodeDetail } from './NodeDetail';
 import { OnboardingPanel } from './OnboardingPanel';
 import { FocusMode } from './FocusMode';
 import { GraphSearch } from './GraphSearch';
+import { FlowPanel } from './FlowPanel';
+import { FlowVisualization } from './FlowVisualization';
 
 /* ─── Node/Edge type maps ─────────────────────────────────────── */
 
@@ -320,13 +324,19 @@ function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasP
     setNodes: setStoreNodes,
   } = useGraphStore();
 
+  const { setDetectedFlows } = useFlowStore();
+
   const { fitView } = useReactFlow();
 
   // Compute architecture on mount
   useEffect(() => {
     const arch = buildArchitecture(graphNodes, graphEdges);
     setClusters(arch.clusters, arch.clusterEdges);
-  }, [graphNodes, graphEdges, setClusters]);
+    
+    // Detect flows
+    const flows = detectFlows(graphNodes, graphEdges);
+    setDetectedFlows(flows);
+  }, [graphNodes, graphEdges, setClusters, setDetectedFlows]);
 
   // Compute layout based on view level
   const { rfNodes, rfEdges } = useMemo(() => {
@@ -424,6 +434,9 @@ function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasP
       
       {/* Focus Mode overlay */}
       <FocusMode />
+      
+      {/* Flow Visualization overlay */}
+      <FlowVisualization />
     </>
   );
 }
@@ -438,6 +451,7 @@ export function GraphCanvas({ nodes, edges }: GraphCanvasProps) {
         <LevelSwitcher />
         <NodeDetail />
         <GraphSearch />
+        <FlowPanel />
       </ReactFlowProvider>
     </div>
   );
