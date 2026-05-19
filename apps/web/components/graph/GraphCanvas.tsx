@@ -187,7 +187,7 @@ function GraphCanvasInner() {
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       fitView
-      fitViewOptions={{ padding: 0.3 }}
+      fitViewOptions={{ padding: 0.15 }}
       nodesDraggable
       nodesConnectable={false}
       edgesUpdatable={false}
@@ -196,6 +196,7 @@ function GraphCanvasInner() {
       minZoom={0.1}
       maxZoom={4}
       proOptions={{ hideAttribution: true }}
+      style={{ background: '#080808' }}
     >
       <Background variant={'dots' as any} gap={24} size={1} color="#1a1a1a" />
       <Controls
@@ -204,14 +205,14 @@ function GraphCanvasInner() {
           bottom: 16,
           right: 16,
           left: 'auto',
-          background: '#0d0d0d',
+          background: '#080808',
           border: '1px solid #1f1f1f',
           borderRadius: 8,
         }}
       />
       <MiniMap
         nodeColor={(n) => TYPE_COLORS[n.data?.nodeType] || '#4b5563'}
-        style={{ background: '#0d0d0d', bottom: 16, left: 16 }}
+        style={{ background: '#0d0d0d', bottom: 60, left: 16, width: 140, height: 90 }}
         maskColor="rgba(0,0,0,0.8)"
       />
     </ReactFlow>

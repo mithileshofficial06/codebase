@@ -39,7 +39,7 @@ export default function AppLayout() {
         </div>
 
         {/* AI Chat — top 75% */}
-        <div className="flex-[3] flex flex-col relative z-10 p-4 overflow-y-auto" style={{ borderBottom: '1px solid #1a1a1a' }}>
+        <div className="flex-[3] flex flex-col relative z-10 p-4 overflow-y-auto" style={{ background: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }}>
           <div style={{ fontSize: 10, fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
             AI Chat
           </div>
@@ -55,7 +55,7 @@ export default function AppLayout() {
         </div>
 
         {/* Health Score — bottom 25% */}
-        <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-4">
+        <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-4" style={{ background: '#0a0a0a' }}>
           <div style={{ fontSize: 10, fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
             Health Score
           </div>

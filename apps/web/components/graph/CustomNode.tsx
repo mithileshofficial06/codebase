@@ -5,10 +5,10 @@ import { Handle, Position } from 'reactflow';
 import { useGraphStore } from '@/store/graphStore';
 
 const NODE_CONFIG = {
-  core:    { color: '#3b82f6', radius: 16, shadow: '0 0 12px 3px rgba(59,130,246,0.5)' },
-  hotspot: { color: '#ef4444', radius: 14, shadow: '0 0 10px 3px rgba(239,68,68,0.4)' },
-  stable:  { color: '#10b981', radius: 11, shadow: '0 0 8px 2px rgba(16,185,129,0.3)' },
-  utility: { color: '#4b5563', radius: 9,  shadow: '0 0 4px 1px rgba(75,85,99,0.2)' },
+  core:    { color: '#3b82f6', radius: 12, shadow: '0 0 10px 3px rgba(59,130,246,0.5)' },
+  hotspot: { color: '#ef4444', radius: 11, shadow: '0 0 8px 3px rgba(239,68,68,0.4)' },
+  stable:  { color: '#10b981', radius: 9,  shadow: '0 0 6px 2px rgba(16,185,129,0.3)' },
+  utility: { color: '#4b5563', radius: 7,  shadow: '0 0 3px 1px rgba(75,85,99,0.2)' },
 } as const;
 
 export type NodeType = keyof typeof NODE_CONFIG;
