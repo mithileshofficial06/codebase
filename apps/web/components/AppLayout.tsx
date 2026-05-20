@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { RepoData } from '@codemap/shared';
 import { ChatPanel } from './chat/ChatPanel';
 import { useChat } from '@/hooks/useChat';
 import { useGraphStore } from '@/store/graphStore';
+import { useFlowStore } from '@/store/flowStore';
+import { buildGraphAwareContext, generateSuggestedQuestions } from '@/lib/graphAwareContext';
+import { ClickableReference } from '@/lib/graphReactionEngine';
 import { MessageCircle, Layers, AlertTriangle, Zap, ChevronRight } from 'lucide-react';
 
 const GraphCanvas = dynamic(() => import('./graph/GraphCanvas'), { ssr: false });
@@ -213,24 +216,62 @@ function ArchitectureTab() {
 
 export default function AppLayout({ repoData }: AppLayoutProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'arch'>('arch');
+  const [graphReactCallback, setGraphReactCallback] = useState<((ref: ClickableReference) => void) | null>(null);
+  
+  const { nodes, edges, clusters, clusterEdges, focusedNodeId, focusedClusterId, viewLevel, setFocusedNode, expandCluster } = useGraphStore();
+  const { detectedFlows, activeFlow, selectFlow, startPlayback } = useFlowStore();
 
-  const chatGraphData = {
-    nodes: repoData.nodes.map(n => ({
-      id: n.id,
-      label: n.label,
-      nodeType: 'file',
-      commitFrequency: n.commitFrequency,
-      fileSize: n.size,
-    })),
-    edges: repoData.edges.map(e => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      weight: e.weight,
-    })),
+  // Build graph-aware data for chat
+  const graphAwareData = {
+    nodes: repoData.nodes,
+    edges: repoData.edges,
+    clusters,
+    clusterEdges,
+    flows: detectedFlows,
+    focusedNodeId,
+    focusedClusterId,
+    activeFlow,
+    viewLevel,
+    healthMetrics: repoData.health,
   };
 
-  const { messages, isLoading, sendMessage } = useChat(chatGraphData);
+  const { messages, isLoading, sendMessage } = useChat(graphAwareData);
+
+  // Generate context-aware suggested questions
+  const suggestedQuestions = useMemo(() => {
+    const context = buildGraphAwareContext(
+      repoData.nodes,
+      repoData.edges,
+      clusters,
+      clusterEdges,
+      detectedFlows,
+      focusedNodeId,
+      focusedClusterId,
+      activeFlow,
+      viewLevel,
+      repoData.health
+    );
+    return generateSuggestedQuestions(context);
+  }, [repoData, clusters, clusterEdges, detectedFlows, focusedNodeId, focusedClusterId, activeFlow, viewLevel]);
+
+  // Handle reference clicks from chat
+  const handleReferenceClick = useCallback((ref: ClickableReference) => {
+    if (ref.type === 'file') {
+      setFocusedNode(ref.target);
+      // Notify graph to zoom (will be handled by GraphCanvas)
+      if (graphReactCallback) {
+        graphReactCallback(ref);
+      }
+    } else if (ref.type === 'cluster') {
+      expandCluster(ref.target);
+    } else if (ref.type === 'flow') {
+      const flow = detectedFlows.find(f => f.id === ref.target);
+      if (flow) {
+        selectFlow(flow);
+        setTimeout(() => startPlayback(), 500);
+      }
+    }
+  }, [setFocusedNode, expandCluster, detectedFlows, selectFlow, startPlayback, graphReactCallback]);
 
   return (
     <motion.div
@@ -320,7 +361,13 @@ export default function AppLayout({ repoData }: AppLayoutProps) {
         {/* Tab content */}
         <div className="flex-1 relative z-10" style={{ minHeight: 0 }}>
           {activeTab === 'chat' ? (
-            <ChatPanel messages={messages} isLoading={isLoading} sendMessage={sendMessage} />
+            <ChatPanel 
+              messages={messages} 
+              isLoading={isLoading} 
+              sendMessage={sendMessage}
+              suggestedQuestions={suggestedQuestions}
+              onReferenceClick={handleReferenceClick}
+            />
           ) : (
             <ArchitectureTab />
           )}

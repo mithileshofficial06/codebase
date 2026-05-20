@@ -2,29 +2,26 @@
 
 import { useCallback, useRef } from 'react';
 import { useChatStore, Message } from '@/store/chatStore';
+import { GraphNode, GraphEdge } from '@codemap/shared/types';
+import { ClusterNode, ClusterEdge } from '@/lib/architectureEngine';
+import { DetectedFlow } from '@/lib/flowDetection';
+import { buildGraphAwareContext, formatContextForAI } from '@/lib/graphAwareContext';
+import { detectQuestionIntent } from '@/lib/graphReactionEngine';
 
-interface GraphData {
-  nodes: Array<{ id: string; label: string; nodeType: string; commitFrequency: number; fileSize: number }>;
-  edges: Array<{ id: string; source: string; target: string; weight: number }>;
+interface GraphAwareData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  clusters: ClusterNode[];
+  clusterEdges: ClusterEdge[];
+  flows: DetectedFlow[];
+  focusedNodeId: string | null;
+  focusedClusterId: string | null;
+  activeFlow: DetectedFlow | null;
+  viewLevel: string;
+  healthMetrics: any;
 }
 
-function buildGraphContext(data: GraphData): string {
-  const nodesSummary = data.nodes.map(n =>
-    `${n.label} [${n.nodeType}] commits:${n.commitFrequency} size:${n.fileSize}b`
-  ).join('\n');
-
-  // Build ID→label lookup so edges reference readable names
-  const idToLabel: Record<string, string> = {};
-  data.nodes.forEach(n => { idToLabel[n.id] = n.label; });
-
-  const edgesSummary = data.edges.map(e =>
-    `${idToLabel[e.source] || e.source}→${idToLabel[e.target] || e.target}`
-  ).join(', ');
-
-  return `Nodes:\n${nodesSummary}\n\nEdges: ${edgesSummary}`;
-}
-
-export function useChat(graphData: GraphData) {
+export function useChat(graphData: GraphAwareData) {
   const {
     messages,
     isLoading,
@@ -59,15 +56,34 @@ export function useChat(graphData: GraphData) {
     addMessage(assistantMsg);
     setLoading(true);
 
-    // 3. Call API
+    // 3. Build graph-aware context
+    const context = buildGraphAwareContext(
+      graphData.nodes,
+      graphData.edges,
+      graphData.clusters,
+      graphData.clusterEdges,
+      graphData.flows,
+      graphData.focusedNodeId,
+      graphData.focusedClusterId,
+      graphData.activeFlow,
+      graphData.viewLevel,
+      graphData.healthMetrics
+    );
+    
+    const graphContext = formatContextForAI(context);
+    const intent = detectQuestionIntent(question);
+
+    // 4. Call API
     abortRef.current = new AbortController();
     try {
-      const graphContext = buildGraphContext(graphData);
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, graphContext }),
+        body: JSON.stringify({ 
+          question, 
+          graphContext,
+          questionIntent: intent.type,
+        }),
         signal: abortRef.current.signal,
       });
 

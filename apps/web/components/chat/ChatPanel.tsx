@@ -1,25 +1,24 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { ArrowUp } from 'lucide-react';
+import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowUp, Sparkles } from 'lucide-react';
 import { Message } from '@/store/chatStore';
 import { ChatMessage } from './ChatMessage';
 import { StreamingIndicator } from './StreamingIndicator';
-
-const SUGGESTED_QUESTIONS = [
-  'What does auth.ts do?',
-  'Which files are risky to change?',
-  'How does the payment flow work?',
-];
+import { useGraphStore } from '@/store/graphStore';
+import { useFlowStore } from '@/store/flowStore';
+import { ClickableReference } from '@/lib/graphReactionEngine';
 
 interface ChatPanelProps {
   messages: Message[];
   isLoading: boolean;
   sendMessage: (question: string) => void;
+  suggestedQuestions: string[];
+  onReferenceClick?: (ref: ClickableReference) => void;
 }
 
-export function ChatPanel({ messages, isLoading, sendMessage }: ChatPanelProps) {
+export function ChatPanel({ messages, isLoading, sendMessage, suggestedQuestions, onReferenceClick }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,39 +61,40 @@ export function ChatPanel({ messages, isLoading, sendMessage }: ChatPanelProps) 
       {/* Header */}
       <div
         style={{
-          height: 40,
-          padding: '0 12px',
+          height: 44,
+          padding: '0 14px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid #141414',
           flexShrink: 0,
+          background: 'linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 100%)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <div
             style={{
-              width: 6,
-              height: 6,
+              width: 7,
+              height: 7,
               borderRadius: '50%',
-              backgroundColor: isLoading ? '#6b7280' : '#10b981',
+              background: isLoading ? 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              boxShadow: isLoading ? 'none' : '0 0 8px rgba(16,185,129,0.4)',
               animation: isLoading ? 'none' : 'status-pulse 2s ease-in-out infinite',
             }}
           />
           <span
             style={{
               fontSize: 12,
-              color: '#888888',
-              fontWeight: 500,
-              fontFamily: 'var(--font-body, sans-serif)',
+              color: '#999',
+              fontWeight: 600,
+              fontFamily: '"Geist", -apple-system, sans-serif',
+              letterSpacing: '-0.01em',
             }}
           >
-            Ask CodeMap
+            Graph-Aware AI
           </span>
         </div>
-        <span style={{ fontSize: 11, color: '#333333', fontFamily: 'var(--font-code, monospace)' }}>
-          ⌘K
-        </span>
+        <Sparkles size={13} color="#555" />
       </div>
 
       {/* Messages area */}
@@ -102,7 +102,7 @@ export function ChatPanel({ messages, isLoading, sendMessage }: ChatPanelProps) 
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: 12,
+          padding: 14,
         }}
         className="chat-scroll"
       >
@@ -114,41 +114,72 @@ export function ChatPanel({ messages, isLoading, sendMessage }: ChatPanelProps) 
               alignItems: 'center',
               justifyContent: 'center',
               height: '100%',
-              gap: 8,
+              gap: 10,
+              padding: '0 12px',
             }}
           >
-            {SUGGESTED_QUESTIONS.map((q) => (
-              <button
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 8,
+              boxShadow: '0 0 20px rgba(59,130,246,0.3)',
+            }}>
+              <Sparkles size={22} color="#ffffff" />
+            </div>
+            <p style={{
+              fontSize: 11,
+              color: '#666',
+              textAlign: 'center',
+              marginBottom: 12,
+              lineHeight: 1.5,
+            }}>
+              Ask me about architecture, flows, risks, or where to start exploring
+            </p>
+            {suggestedQuestions.map((q, idx) => (
+              <motion.button
                 key={q}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
                 onClick={() => handleSuggestedClick(q)}
                 style={{
                   border: '1px solid #1f1f1f',
                   background: '#0d0d0d',
-                  color: '#555555',
+                  color: '#777',
                   fontSize: 11,
                   borderRadius: 9999,
-                  padding: '6px 12px',
+                  padding: '7px 14px',
                   cursor: 'pointer',
-                  transition: 'all 150ms ease',
-                  fontFamily: 'var(--font-body, sans-serif)',
+                  transition: 'all 200ms ease',
+                  fontFamily: '"Geist", -apple-system, sans-serif',
+                  fontWeight: 500,
+                  width: '100%',
+                  textAlign: 'left',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#999999';
+                  e.currentTarget.style.color = '#aaa';
                   e.currentTarget.style.borderColor = '#2a2a2a';
+                  e.currentTarget.style.background = '#111';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#555555';
+                  e.currentTarget.style.color = '#777';
                   e.currentTarget.style.borderColor = '#1f1f1f';
+                  e.currentTarget.style.background = '#0d0d0d';
                 }}
               >
                 {q}
-              </button>
+              </motion.button>
             ))}
           </div>
         )}
 
         {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} />
+          <ChatMessage key={msg.id} message={msg} onReferenceClick={onReferenceClick} />
         ))}
 
         <AnimatePresence>
@@ -163,11 +194,11 @@ export function ChatPanel({ messages, isLoading, sendMessage }: ChatPanelProps) 
       {/* Input bar */}
       <div
         style={{
-          height: 44,
+          minHeight: 50,
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          padding: '0 8px 0 12px',
+          gap: 9,
+          padding: '0 10px 0 14px',
           background: '#0d0d0d',
           borderTop: '1px solid #141414',
           flexShrink: 0,
@@ -179,42 +210,44 @@ export function ChatPanel({ messages, isLoading, sendMessage }: ChatPanelProps) 
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={isLoading}
-          placeholder="Ask anything about this codebase..."
+          placeholder="Ask about this codebase..."
           style={{
             flex: 1,
             background: 'transparent',
             border: 'none',
             outline: 'none',
             fontSize: 13,
-            color: '#cccccc',
-            fontFamily: 'var(--font-body, sans-serif)',
+            color: '#d4d4d4',
+            fontFamily: '"Geist", -apple-system, sans-serif',
+            fontWeight: 450,
           }}
         />
         <button
           onClick={handleSubmit}
           disabled={isLoading || !hasText}
           style={{
-            width: 28,
-            height: 28,
+            width: 30,
+            height: 30,
             borderRadius: '50%',
             border: 'none',
-            background: hasText ? '#3b82f6' : '#1a1a1a',
+            background: hasText ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#1a1a1a',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: hasText ? 'pointer' : 'default',
-            transition: 'background 150ms ease',
+            transition: 'all 200ms ease',
             flexShrink: 0,
+            boxShadow: hasText ? '0 0 12px rgba(59,130,246,0.3)' : 'none',
           }}
         >
-          <ArrowUp size={14} color={hasText ? '#ffffff' : '#555555'} strokeWidth={2.5} />
+          <ArrowUp size={15} color={hasText ? '#ffffff' : '#555555'} strokeWidth={2.5} />
         </button>
       </div>
 
       <style>{`
         @keyframes status-pulse {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
+          50% { opacity: 0.5; }
         }
         .chat-scroll::-webkit-scrollbar { width: 4px; }
         .chat-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
