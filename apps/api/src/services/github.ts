@@ -1,6 +1,20 @@
 import { Octokit } from '@octokit/rest';
 
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+// Verify token exists
+if (!process.env.GITHUB_TOKEN) {
+  console.error('GITHUB_TOKEN environment variable is not set!');
+}
+
+const octokit = new Octokit({ 
+  auth: process.env.GITHUB_TOKEN,
+  userAgent: 'CodeMap/1.0',
+  log: {
+    debug: () => {},
+    info: () => {},
+    warn: console.warn,
+    error: console.error,
+  },
+});
 
 export interface GitHubFile {
   path: string;

@@ -1,11 +1,21 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import analyzeRouter from './routes/analyze';
 import chatRouter from './routes/chat';
 import healthRouter from './routes/health';
 
-dotenv.config({ path: '../../.env' });
+// Load .env from project root
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+// Verify GitHub token is loaded
+if (!process.env.GITHUB_TOKEN) {
+  console.error('⚠️  WARNING: GITHUB_TOKEN not found in environment variables!');
+  console.error('   Make sure .env file exists at project root with GITHUB_TOKEN set.');
+} else {
+  console.log('✓ GitHub token loaded successfully');
+}
 
 const app = express();
 const PORT = process.env.PORT || 4000;
