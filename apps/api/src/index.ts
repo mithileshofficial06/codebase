@@ -2,11 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import analyzeRouter from './routes/analyze';
-import chatRouter from './routes/chat';
-import healthRouter from './routes/health';
 
-// Load .env from project root
+// Load .env FIRST before importing other modules
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 // Verify GitHub token is loaded
@@ -16,6 +13,10 @@ if (!process.env.GITHUB_TOKEN) {
 } else {
   console.log('✓ GitHub token loaded successfully');
 }
+
+import analyzeRouter from './routes/analyze';
+import chatRouter from './routes/chat';
+import healthRouter from './routes/health';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
