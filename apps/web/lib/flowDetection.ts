@@ -1,8 +1,8 @@
 import { GraphNode, GraphEdge } from '@codemap/shared';
 
 /**
- * Flow Detection Engine
- * Automatically infers execution flows from graph structure
+ * Flow Detection Engine with Confidence Scoring
+ * Only shows high-confidence flows, hides fake/low-quality flows
  */
 
 export interface FlowStep {
@@ -24,6 +24,7 @@ export interface DetectedFlow {
   systemsInvolved: string[];
   estimatedRisk: 'low' | 'medium' | 'high';
   category: 'authentication' | 'api' | 'data' | 'ui' | 'business';
+  confidence: number; // 0-1, flow quality score
 }
 
 /**
@@ -213,10 +214,55 @@ function generateStepDescription(step: FlowStep, index: number, total: number): 
 }
 
 /**
- * Main flow detection function
+ * Calculate flow confidence score
+ * Based on: chain depth, dependency quality, framework signals
+ */
+function calculateFlowConfidence(
+  steps: FlowStep[],
+  nodes: GraphNode[],
+  edges: GraphEdge[]
+): number {
+  let confidence = 0;
+
+  // Factor 1: Chain depth (meaningful traversal)
+  if (steps.length >= 3) confidence += 0.3;
+  if (steps.length >= 5) confidence += 0.2;
+  if (steps.length >= 7) confidence += 0.1;
+
+  // Factor 2: System diversity (crosses multiple layers)
+  const uniqueSystems = new Set(steps.map(s => s.systemType));
+  if (uniqueSystems.size >= 3) confidence += 0.2;
+  if (uniqueSystems.size >= 4) confidence += 0.1;
+
+  // Factor 3: Dependency quality (actual edges exist)
+  let edgeCount = 0;
+  for (let i = 0; i < steps.length - 1; i++) {
+    const hasEdge = edges.some(e => 
+      (e.source === steps[i].nodeId && e.target === steps[i + 1].nodeId) ||
+      (e.target === steps[i].nodeId && e.source === steps[i + 1].nodeId)
+    );
+    if (hasEdge) edgeCount++;
+  }
+  const edgeRatio = edgeCount / Math.max(steps.length - 1, 1);
+  confidence += edgeRatio * 0.2;
+
+  // Factor 4: Framework signals (route → service → model pattern)
+  const hasRoutePattern = steps.some(s => s.systemType === 'route');
+  const hasServicePattern = steps.some(s => s.systemType === 'service');
+  const hasModelPattern = steps.some(s => s.systemType === 'model');
+  
+  if (hasRoutePattern && hasServicePattern) confidence += 0.1;
+  if (hasServicePattern && hasModelPattern) confidence += 0.1;
+
+  return Math.min(confidence, 1.0);
+}
+
+/**
+ * Main flow detection function with confidence filtering
  */
 export function detectFlows(nodes: GraphNode[], edges: GraphEdge[]): DetectedFlow[] {
   const detectedFlows: DetectedFlow[] = [];
+  const MIN_CONFIDENCE = 0.4; // Only show flows with 40%+ confidence
   
   for (const pattern of FLOW_PATTERNS) {
     // Find entry points matching this flow pattern
@@ -260,6 +306,12 @@ export function detectFlows(nodes: GraphNode[], edges: GraphEdge[]): DetectedFlo
         step.description = generateStepDescription(step, i, steps.length);
       });
       
+      // Calculate confidence
+      const confidence = calculateFlowConfidence(steps, nodes, edges);
+      
+      // Skip low-confidence flows
+      if (confidence < MIN_CONFIDENCE) continue;
+      
       // Extract unique systems
       const systemsInvolved = [...new Set(steps.map(s => s.systemType))];
       
@@ -273,6 +325,7 @@ export function detectFlows(nodes: GraphNode[], edges: GraphEdge[]): DetectedFlo
         systemsInvolved: systemsInvolved,
         estimatedRisk: estimateRisk(steps, nodes),
         category: pattern.category,
+        confidence,
       };
       
       detectedFlows.push(flow);
@@ -286,8 +339,14 @@ export function detectFlows(nodes: GraphNode[], edges: GraphEdge[]): DetectedFlo
     );
   });
   
-  // Sort by complexity and relevance
+  // Sort by confidence first, then complexity and relevance
   return uniqueFlows.sort((a, b) => {
+    // Confidence is primary sort
+    if (Math.abs(a.confidence - b.confidence) > 0.1) {
+      return b.confidence - a.confidence;
+    }
+    
+    // Then by category priority
     const categoryPriority: Record<string, number> = {
       authentication: 5, api: 4, business: 3, data: 2, ui: 1
     };

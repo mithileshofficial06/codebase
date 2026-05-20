@@ -179,8 +179,10 @@ export function FlowPanel() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#1a1a1a] border border-[#1f1f1f] flex items-center justify-center">
               <Zap size={28} className="text-[#666]" />
             </div>
-            <p className="text-sm text-[#888] font-medium mb-1">No flows detected</p>
-            <p className="text-xs text-[#666]">Analyzing repository structure...</p>
+            <p className="text-sm text-[#888] font-medium mb-2">No meaningful flows detected</p>
+            <p className="text-xs text-[#666] leading-relaxed px-4">
+              This repository doesn't have clear execution flows, or the dependency graph is too sparse to infer behavioral patterns.
+            </p>
           </div>
         ) : (
           <div className="p-4 space-y-2.5">

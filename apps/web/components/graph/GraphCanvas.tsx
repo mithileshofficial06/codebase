@@ -20,6 +20,8 @@ import { GraphNode, GraphEdge } from '@codemap/shared';
 import { useGraphStore } from '@/store/graphStore';
 import { useFlowStore } from '@/store/flowStore';
 import { buildArchitecture, ClusterNode as ClusterNodeType, ClusterEdge } from '@/lib/architectureEngine';
+import { buildSemanticArchitecture, SemanticCluster, SemanticEdge } from '@/lib/semanticArchitectureEngine';
+import { computeSemanticArchitectureLayout, computeSemanticModuleLayout, computeSemanticFileLayout, optimizeGraphDensity } from '@/lib/semanticLayoutEngine';
 import { detectFlows } from '@/lib/flowDetection';
 import { CustomNode } from './CustomNode';
 import { CustomEdge } from './CustomEdge';
@@ -328,31 +330,189 @@ function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasP
 
   const { fitView } = useReactFlow();
 
-  // Compute architecture on mount
+  // Compute architecture on mount - USE SEMANTIC ENGINE
   useEffect(() => {
-    const arch = buildArchitecture(graphNodes, graphEdges);
-    setClusters(arch.clusters, arch.clusterEdges);
+    const semanticArch = buildSemanticArchitecture(graphNodes, graphEdges);
     
-    // Detect flows
+    // Convert SemanticCluster to ClusterNode for compatibility
+    const compatibleClusters: ClusterNodeType[] = semanticArch.clusters.map(c => ({
+      id: c.id,
+      label: c.label,
+      humanLabel: c.humanLabel,
+      folder: c.folder,
+      files: c.files,
+      fileCount: c.fileCount,
+      totalSize: c.totalSize,
+      avgCommitFreq: c.avgCommitFreq,
+      hotspotCount: c.hotspotCount,
+      isEntryPoint: c.isEntryPoint,
+      color: c.color,
+      icon: c.icon,
+    }));
+    
+    // Convert SemanticEdge to ClusterEdge
+    const compatibleEdges: ClusterEdge[] = semanticArch.semanticEdges.map(e => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      weight: e.weight,
+    }));
+    
+    setClusters(compatibleClusters, compatibleEdges);
+    
+    // Detect flows with confidence filtering
     const flows = detectFlows(graphNodes, graphEdges);
     setDetectedFlows(flows);
   }, [graphNodes, graphEdges, setClusters, setDetectedFlows]);
 
-  // Compute layout based on view level
+  // Compute layout based on view level - USE SEMANTIC LAYOUT
   const { rfNodes, rfEdges } = useMemo(() => {
     if (viewLevel === 'architecture' && clusters.length > 0) {
-      return computeArchitectureLayout(clusters, clusterEdges);
+      // Use semantic architecture layout
+      const semanticArch = buildSemanticArchitecture(graphNodes, graphEdges);
+      const layout = computeSemanticArchitectureLayout(semanticArch.clusters, semanticArch.semanticEdges);
+      
+      // Optimize density
+      const optimizedNodes = optimizeGraphDensity(layout.nodes, 0.65);
+      
+      // Convert to ReactFlow nodes
+      const rfNodes: Node[] = optimizedNodes.map(sn => {
+        const cluster = semanticArch.clusters.find(c => c.id === sn.id)!;
+        return {
+          id: sn.id,
+          type: 'cluster',
+          position: { x: sn.x, y: sn.y },
+          data: {
+            label: cluster.label,
+            humanLabel: cluster.humanLabel,
+            fileCount: cluster.fileCount,
+            color: cluster.color,
+            icon: cluster.icon,
+            hotspotCount: cluster.hotspotCount,
+            isEntryPoint: cluster.isEntryPoint,
+            avgCommitFreq: cluster.avgCommitFreq,
+            totalSize: cluster.totalSize,
+          },
+        };
+      });
+      
+      // Convert edges
+      const rfEdges: Edge[] = layout.edges
+        .filter(e => {
+          const ids = new Set(semanticArch.clusters.map(c => c.id));
+          return ids.has(e.source) && ids.has(e.target);
+        })
+        .map(e => {
+          const srcCluster = semanticArch.clusters.find(c => c.id === e.source);
+          const tgtCluster = semanticArch.clusters.find(c => c.id === e.target);
+          return {
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            type: 'custom',
+            data: {
+              weight: e.weight,
+              sourceColor: srcCluster?.color || '#4b5563',
+              targetColor: tgtCluster?.color || '#4b5563',
+              isClusterEdge: true,
+            },
+          };
+        });
+      
+      return { rfNodes, rfEdges };
     }
 
     if (viewLevel === 'module' && expandedCluster) {
       const cluster = clusters.find(c => c.id === expandedCluster);
       if (cluster) {
-        return computeModuleLayout(cluster, graphEdges);
+        // Use semantic module layout
+        const semanticCluster: SemanticCluster = {
+          ...cluster,
+          confidence: 'high',
+          semanticType: 'module',
+          layerGravity: { x: 0, y: 0 },
+        };
+        
+        const layout = computeSemanticModuleLayout(semanticCluster, graphEdges);
+        
+        const rfNodes: Node[] = layout.nodes.map(sn => {
+          const raw = cluster.files.find(f => f.id === sn.id)!;
+          return {
+            id: sn.id,
+            type: 'custom',
+            position: { x: sn.x, y: sn.y },
+            data: {
+              id: raw.id,
+              label: raw.label,
+              nodeType: classifyNode(raw),
+              commitFrequency: raw.commitFrequency,
+              fileSize: raw.size,
+              path: raw.path,
+              folder: cluster.folder,
+              dependencies: raw.dependencies,
+              dependents: raw.dependents,
+              extColor: getExtColor(raw.path),
+            },
+          };
+        });
+
+        const rfEdges: Edge[] = layout.edges.map(e => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          type: 'custom',
+          data: {
+            weight: e.weight,
+            sourceColor: getExtColor(cluster.files.find(f => f.id === e.source)?.path || ''),
+            targetColor: getExtColor(cluster.files.find(f => f.id === e.target)?.path || ''),
+          },
+        }));
+
+        return { rfNodes, rfEdges };
       }
     }
 
-    // File view (Level 3) or fallback
-    return computeFileLayout(graphNodes, graphEdges);
+    // File view (Level 3) - USE SEMANTIC FILE LAYOUT
+    const semanticArch = buildSemanticArchitecture(graphNodes, graphEdges);
+    const layout = computeSemanticFileLayout(graphNodes, graphEdges, semanticArch.clusters);
+    
+    // Optimize density
+    const optimizedNodes = optimizeGraphDensity(layout.nodes, 0.7);
+    
+    const rfNodes: Node[] = optimizedNodes.map(sn => {
+      const raw = graphNodes.find(n => n.id === sn.id)!;
+      return {
+        id: sn.id,
+        type: 'custom',
+        position: { x: sn.x, y: sn.y },
+        data: {
+          id: raw.id,
+          label: raw.label,
+          nodeType: classifyNode(raw),
+          commitFrequency: raw.commitFrequency,
+          fileSize: raw.size,
+          path: raw.path,
+          folder: sn.cluster || '_root',
+          dependencies: raw.dependencies,
+          dependents: raw.dependents,
+          extColor: getExtColor(raw.path),
+        },
+      };
+    });
+
+    const rfEdges: Edge[] = layout.edges.map(e => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      type: 'custom',
+      data: {
+        weight: e.weight,
+        sourceColor: getExtColor(graphNodes.find(n => n.id === e.source)?.path || ''),
+        targetColor: getExtColor(graphNodes.find(n => n.id === e.target)?.path || ''),
+      },
+    }));
+
+    return { rfNodes, rfEdges };
   }, [viewLevel, clusters, clusterEdges, expandedCluster, graphNodes, graphEdges]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(rfNodes);
