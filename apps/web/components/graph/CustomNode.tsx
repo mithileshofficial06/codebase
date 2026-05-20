@@ -111,21 +111,6 @@ function CustomNodeComponent({ id, data, selected }: any) {
           </>
         )}
         
-        {/* Focus glow bloom */}
-        {isFocused && !isCurrentStep && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: -12,
-              borderRadius: '50%',
-              background: `radial-gradient(circle, ${extColor}60 0%, transparent 70%)`,
-              filter: 'blur(8px)',
-              animation: 'focus-pulse 2s ease-in-out infinite',
-              pointerEvents: 'none',
-            }}
-          />
-        )}
-        
         <div
           style={{
             width: radius * 2,
@@ -135,15 +120,11 @@ function CustomNodeComponent({ id, data, selected }: any) {
             position: 'relative',
             boxShadow: isCurrentStep
               ? `0 0 30px 10px ${extColor}, ${TYPE_GLOW[nodeType]}`
-              : isFocused
-              ? `0 0 20px 6px ${extColor}80, ${TYPE_GLOW[nodeType]}`
               : isHovered || selected
               ? TYPE_GLOW[nodeType]
               : `0 0 4px 1px ${extColor}40`,
             border: isCurrentStep
               ? `4px solid ${extColor}`
-              : isFocused 
-              ? `3px solid ${extColor}` 
               : selected 
               ? '2px solid #ffffff' 
               : `1px solid ${extColor}80`,
@@ -172,7 +153,7 @@ function CustomNodeComponent({ id, data, selected }: any) {
               borderRadius: '50%',
               background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
               pointerEvents: 'none',
-              opacity: isHovered || selected || isFocused ? 0.8 : 0.4,
+              opacity: isHovered || selected ? 0.8 : 0.4,
               transition: 'opacity 400ms ease',
             }}
           />

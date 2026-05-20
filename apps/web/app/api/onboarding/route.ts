@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const NVIDIA_API_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 
 const ONBOARDING_PROMPT = `You are CodeMap, a codebase analysis tool. Given the following repository architecture data, generate a brief onboarding summary.
 
@@ -29,35 +30,59 @@ export async function POST(req: NextRequest) {
   try {
     const { clusters } = await req.json();
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.NVIDIA_API_KEY;
     if (!apiKey) {
+      console.error('[Onboarding] NVIDIA_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'GEMINI_API_KEY not configured' }),
+        JSON.stringify({ error: 'NVIDIA_API_KEY not configured' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
 
     // Build compact context from clusters
     const context = clusters.map((c: any) =>
       `${c.humanLabel} (${c.fileCount} files, ${(c.totalSize / 1024).toFixed(1)}KB)${c.isEntryPoint ? ' [ENTRY POINT]' : ''}${c.hotspotCount > 0 ? ` [${c.hotspotCount} hotspots]` : ''}`
     ).join('\n');
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    console.log('[Onboarding] Calling NVIDIA NIM API...');
 
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: `${ONBOARDING_PROMPT}\n\nRepository modules:\n${context}` }] }],
-      generationConfig: { maxOutputTokens: 300, temperature: 0.2 },
+    const response = await fetch(NVIDIA_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          { role: 'system', content: ONBOARDING_PROMPT },
+          { role: 'user', content: `Repository modules:\n${context}` },
+        ],
+        max_tokens: 300,
+        temperature: 0.2,
+        stream: false,
+      }),
     });
 
-    const text = result.response.text();
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('[Onboarding] NVIDIA NIM API error:', response.status, errorBody);
+      throw new Error(`NVIDIA NIM API returned ${response.status}: ${errorBody}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || 'No summary generated.';
+    console.log('[Onboarding] Success');
 
     return new Response(
       JSON.stringify({ summary: text }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
-    console.error('Onboarding API error:', error);
+    console.error('[Onboarding] Error:', error.message);
+    console.error('[Onboarding] Stack:', error.stack);
     return new Response(
       JSON.stringify({ error: error.message || 'Failed to generate onboarding' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

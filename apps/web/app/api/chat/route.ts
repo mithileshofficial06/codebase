@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const NVIDIA_API_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are CodeMap AI, an intelligent architecture companion deeply connected to this repository's graph system.
 
@@ -37,18 +38,18 @@ export async function POST(req: NextRequest) {
   try {
     const { question, graphContext, questionIntent } = await req.json();
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.NVIDIA_API_KEY;
     if (!apiKey) {
+      console.error('NVIDIA_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'GEMINI_API_KEY not configured' }),
+        JSON.stringify({ error: 'NVIDIA_API_KEY not configured' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const modelName = process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
 
-    // Build context-aware prompt
+    // Build context-aware system message
     let contextNote = '';
     if (questionIntent) {
       const intentNotes: Record<string, string> = {
@@ -61,9 +62,7 @@ export async function POST(req: NextRequest) {
       contextNote = intentNotes[questionIntent] || '';
     }
 
-    const prompt = `${SYSTEM_PROMPT}
-
-${contextNote ? `QUESTION TYPE: ${contextNote}\n` : ''}
+    const userPrompt = `${contextNote ? `QUESTION TYPE: ${contextNote}\n` : ''}
 REPOSITORY GRAPH INTELLIGENCE:
 ${graphContext}
 
@@ -71,26 +70,72 @@ USER QUESTION: ${question}
 
 Provide a clear, confident answer that references specific files and systems from the graph. Make file names exact so they can be clicked in the UI.`;
 
-    const result = await model.generateContentStream({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: 500,
-        temperature: 0.4,
+    // Call NVIDIA NIM (OpenAI-compatible) with streaming
+    const response = await fetch(NVIDIA_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 500,
+        temperature: 0.4,
+        stream: true,
+      }),
     });
 
-    // Stream the response using ReadableStream
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('NVIDIA NIM API error:', response.status, errorBody);
+      throw new Error(`NVIDIA NIM API returned ${response.status}: ${errorBody}`);
+    }
+
+    // Parse SSE stream from NVIDIA NIM and forward as plain text chunks
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const reader = response.body?.getReader();
+
+    if (!reader) {
+      throw new Error('No response stream from NVIDIA NIM');
+    }
+
     const stream = new ReadableStream({
       async start(controller) {
+        let buffer = '';
         try {
-          for await (const chunk of result.stream) {
-            const text = chunk.text();
-            if (text) {
-              controller.enqueue(encoder.encode(text));
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+              const data = trimmed.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  controller.enqueue(encoder.encode(content));
+                }
+              } catch {
+                // Skip malformed JSON chunks
+              }
             }
           }
         } catch (err) {
+          console.error('Stream error:', err);
           controller.enqueue(encoder.encode('\n\n[Error: Stream interrupted]'));
         } finally {
           controller.close();
@@ -107,6 +152,7 @@ Provide a clear, confident answer that references specific files and systems fro
     });
   } catch (error: any) {
     console.error('Chat API error:', error);
+    console.error('Error details:', error.message, error.stack);
     return new Response(
       JSON.stringify({ error: error.message || 'Something went wrong' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
