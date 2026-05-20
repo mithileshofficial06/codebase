@@ -47,8 +47,6 @@ export interface GraphAwareContext {
   
   // Current focus context
   currentFocus: {
-    focusedNode: string | null;
-    focusedCluster: string | null;
     activeFlow: string | null;
     viewLevel: string;
   };
@@ -74,8 +72,6 @@ export function buildGraphAwareContext(
   clusters: ClusterNode[],
   clusterEdges: ClusterEdge[],
   flows: DetectedFlow[],
-  focusedNodeId: string | null,
-  focusedClusterId: string | null,
   activeFlow: DetectedFlow | null,
   viewLevel: string,
   healthMetrics: any
@@ -149,20 +145,6 @@ export function buildGraphAwareContext(
     .filter(c => c.isEntryPoint)
     .map(c => c.humanLabel);
   
-  // Current focus
-  let focusedNodeName: string | null = null;
-  let focusedClusterName: string | null = null;
-  
-  if (focusedNodeId) {
-    const node = nodes.find(n => n.id === focusedNodeId);
-    focusedNodeName = node ? node.label : null;
-  }
-  
-  if (focusedClusterId) {
-    const cluster = clusters.find(c => c.id === focusedClusterId);
-    focusedClusterName = cluster ? cluster.humanLabel : null;
-  }
-  
   return {
     architectureClusters,
     dependencyGraph: {
@@ -179,8 +161,6 @@ export function buildGraphAwareContext(
       changeHotspots,
     },
     currentFocus: {
-      focusedNode: focusedNodeName,
-      focusedCluster: focusedClusterName,
       activeFlow: activeFlow ? activeFlow.name : null,
       viewLevel,
     },
@@ -200,14 +180,8 @@ export function buildGraphAwareContext(
 export function generateSuggestedQuestions(context: GraphAwareContext): string[] {
   const suggestions: string[] = [];
   
-  // Focus-aware suggestions
-  if (context.currentFocus.focusedNode) {
-    suggestions.push(`How does ${context.currentFocus.focusedNode} work?`);
-    suggestions.push(`What depends on ${context.currentFocus.focusedNode}?`);
-  } else if (context.currentFocus.focusedCluster) {
-    suggestions.push(`Explain the ${context.currentFocus.focusedCluster} system`);
-    suggestions.push(`What are the risks in ${context.currentFocus.focusedCluster}?`);
-  } else if (context.currentFocus.activeFlow) {
+  // Flow-aware suggestions
+  if (context.currentFocus.activeFlow) {
     suggestions.push(`Explain the ${context.currentFocus.activeFlow}`);
     suggestions.push(`What could break in this flow?`);
   }
@@ -296,17 +270,9 @@ export function formatContextForAI(context: GraphAwareContext): string {
   }
   
   // Current focus
-  if (context.currentFocus.focusedNode || context.currentFocus.focusedCluster || context.currentFocus.activeFlow) {
+  if (context.currentFocus.activeFlow) {
     sections.push('\n=== CURRENT FOCUS ===');
-    if (context.currentFocus.focusedNode) {
-      sections.push(`User is focused on: ${context.currentFocus.focusedNode}`);
-    }
-    if (context.currentFocus.focusedCluster) {
-      sections.push(`User is exploring: ${context.currentFocus.focusedCluster} cluster`);
-    }
-    if (context.currentFocus.activeFlow) {
-      sections.push(`Active flow: ${context.currentFocus.activeFlow}`);
-    }
+    sections.push(`Active flow: ${context.currentFocus.activeFlow}`);
   }
   
   // Health metrics

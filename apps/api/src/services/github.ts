@@ -1,20 +1,35 @@
 import { Octokit } from '@octokit/rest';
 
-// Verify token exists
-if (!process.env.GITHUB_TOKEN) {
-  console.error('GITHUB_TOKEN environment variable is not set!');
+let octokit: Octokit;
+
+// Initialize Octokit with token (called after env is loaded)
+export function initializeOctokit() {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    console.error('❌ GITHUB_TOKEN environment variable is not set!');
+    throw new Error('GITHUB_TOKEN is required');
+  }
+  
+  console.log('✓ Initializing Octokit with token:', token.substring(0, 25) + '...');
+  
+  octokit = new Octokit({ 
+    auth: token,
+    userAgent: 'CodeMap/1.0',
+    log: {
+      debug: () => {},
+      info: () => {},
+      warn: console.warn,
+      error: console.error,
+    },
+  });
 }
 
-const octokit = new Octokit({ 
-  auth: process.env.GITHUB_TOKEN,
-  userAgent: 'CodeMap/1.0',
-  log: {
-    debug: () => {},
-    info: () => {},
-    warn: console.warn,
-    error: console.error,
-  },
-});
+function getOctokit(): Octokit {
+  if (!octokit) {
+    initializeOctokit();
+  }
+  return octokit;
+}
 
 export interface GitHubFile {
   path: string;
@@ -65,6 +80,7 @@ function shouldSkipPath(path: string): boolean {
 // ── Fetch repository tree ────────────────────────────────────────
 
 export async function fetchRepoTree(owner: string, repo: string): Promise<RepoMeta> {
+  const octokit = getOctokit();
   const { data: repoData } = await octokit.repos.get({ owner, repo });
 
   const { data: tree } = await octokit.git.getTree({

@@ -218,7 +218,7 @@ export default function AppLayout({ repoData }: AppLayoutProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'arch'>('arch');
   const [graphReactCallback, setGraphReactCallback] = useState<((ref: ClickableReference) => void) | null>(null);
   
-  const { nodes, edges, clusters, clusterEdges, focusedNodeId, focusedClusterId, viewLevel, setFocusedNode, expandCluster } = useGraphStore();
+  const { nodes, edges, clusters, clusterEdges, viewLevel, expandCluster } = useGraphStore();
   const { detectedFlows, activeFlow, selectFlow, startPlayback } = useFlowStore();
 
   // Build graph-aware data for chat
@@ -228,8 +228,6 @@ export default function AppLayout({ repoData }: AppLayoutProps) {
     clusters,
     clusterEdges,
     flows: detectedFlows,
-    focusedNodeId,
-    focusedClusterId,
     activeFlow,
     viewLevel,
     healthMetrics: repoData.health,
@@ -245,19 +243,16 @@ export default function AppLayout({ repoData }: AppLayoutProps) {
       clusters,
       clusterEdges,
       detectedFlows,
-      focusedNodeId,
-      focusedClusterId,
       activeFlow,
       viewLevel,
       repoData.health
     );
     return generateSuggestedQuestions(context);
-  }, [repoData, clusters, clusterEdges, detectedFlows, focusedNodeId, focusedClusterId, activeFlow, viewLevel]);
+  }, [repoData, clusters, clusterEdges, detectedFlows, activeFlow, viewLevel]);
 
   // Handle reference clicks from chat
   const handleReferenceClick = useCallback((ref: ClickableReference) => {
     if (ref.type === 'file') {
-      setFocusedNode(ref.target);
       // Notify graph to zoom (will be handled by GraphCanvas)
       if (graphReactCallback) {
         graphReactCallback(ref);
@@ -271,7 +266,7 @@ export default function AppLayout({ repoData }: AppLayoutProps) {
         setTimeout(() => startPlayback(), 500);
       }
     }
-  }, [setFocusedNode, expandCluster, detectedFlows, selectFlow, startPlayback, graphReactCallback]);
+  }, [expandCluster, detectedFlows, selectFlow, startPlayback, graphReactCallback]);
 
   return (
     <motion.div

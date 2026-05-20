@@ -17,9 +17,7 @@ const TYPE_GLOW: Record<NodeType, string> = {
 function CustomNodeComponent({ id, data, selected }: any) {
   const [isHovered, setIsHovered] = useState(false);
   const activeFilter = useGraphStore((s) => s.activeFilter);
-  const focusedNodeId = useGraphStore((s) => s.focusedNodeId);
   const setSelectedNode = useGraphStore((s) => s.setSelectedNode);
-  const setFocusedNode = useGraphStore((s) => s.setFocusedNode);
   
   // Flow visualization state
   const { activeFlow, currentStepIndex, playbackState } = useFlowStore();
@@ -35,23 +33,15 @@ function CustomNodeComponent({ id, data, selected }: any) {
   const isFutureStep = activeFlow?.steps.slice(currentStepIndex + 1).some(s => s.nodeId === id);
   const isFlowActive = playbackState !== 'idle' && activeFlow;
   
-  // Focus mode logic
-  const isFocused = focusedNodeId === id;
-  const isConnected = focusedNodeId && (
-    data.dependencies?.includes(focusedNodeId) || 
-    data.dependents?.includes(focusedNodeId)
-  );
-  const shouldDim = focusedNodeId && !isFocused && !isConnected;
-  
   // Filter dimming
   const isFilterDimmed = activeFilter !== 'all' && activeFilter !== nodeType;
   
   // Combined dimming logic
-  const isDimmed = shouldDim || isFilterDimmed || (isFlowActive && !isInFlow);
+  const isDimmed = isFilterDimmed || (isFlowActive && !isInFlow);
 
-  const scale = isCurrentStep ? 1.4 : isFocused ? 1.3 : selected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.85 : 1;
-  const opacity = isDimmed ? 0.08 : isPastStep ? 0.5 : isFutureStep ? 0.3 : isConnected ? 0.7 : 1;
-  const zIndex = isCurrentStep ? 200 : isFocused ? 100 : selected ? 50 : isHovered ? 10 : 1;
+  const scale = isCurrentStep ? 1.4 : selected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.85 : 1;
+  const opacity = isDimmed ? 0.08 : isPastStep ? 0.5 : isFutureStep ? 0.3 : 1;
+  const zIndex = isCurrentStep ? 200 : selected ? 50 : isHovered ? 10 : 1;
 
   // Adaptive radius based on connectivity
   const connections = (data.dependencies?.length || 0) + (data.dependents?.length || 0);
@@ -72,10 +62,6 @@ function CustomNodeComponent({ id, data, selected }: any) {
           dependencies: data.dependencies || [],
           dependents: data.dependents || [],
         } as any);
-      }}
-      onDoubleClick={() => {
-        // Double-click to enter focus mode
-        setFocusedNode(id);
       }}
       style={{
         display: 'flex',

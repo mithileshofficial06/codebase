@@ -21,10 +21,6 @@ interface GraphStore {
   onboardingDismissed: boolean;
   onboardingData: string | null;       // AI-generated summary text
   onboardingLoading: boolean;
-
-  // Focus mode
-  focusedNodeId: string | null;
-  focusedClusterId: string | null;
   searchQuery: string;
 
   // Existing actions
@@ -42,12 +38,7 @@ interface GraphStore {
   dismissOnboarding: () => void;
   setOnboardingData: (data: string | null) => void;
   setOnboardingLoading: (loading: boolean) => void;
-
-  // Focus mode actions
-  setFocusedNode: (nodeId: string | null) => void;
-  setFocusedCluster: (clusterId: string | null) => void;
   setSearchQuery: (query: string) => void;
-  clearFocus: () => void;
 }
 
 export const useGraphStore = create<GraphStore>((set) => ({
@@ -66,10 +57,6 @@ export const useGraphStore = create<GraphStore>((set) => ({
   onboardingDismissed: false,
   onboardingData: null,
   onboardingLoading: false,
-
-  // Focus mode state
-  focusedNodeId: null,
-  focusedClusterId: null,
   searchQuery: '',
 
   // Existing actions
@@ -82,15 +69,10 @@ export const useGraphStore = create<GraphStore>((set) => ({
   // New actions
   setViewLevel: (viewLevel) => set({ viewLevel, expandedCluster: null }),
   setClusters: (clusters, clusterEdges) => set({ clusters, clusterEdges }),
-  expandCluster: (clusterId) => set({ expandedCluster: clusterId, viewLevel: 'module', focusedClusterId: clusterId }),
+  expandCluster: (clusterId) => set({ expandedCluster: clusterId, viewLevel: 'module' }),
   collapseCluster: () => set({ expandedCluster: null, viewLevel: 'architecture' }),
   dismissOnboarding: () => set({ onboardingDismissed: true }),
   setOnboardingData: (onboardingData) => set({ onboardingData }),
   setOnboardingLoading: (onboardingLoading) => set({ onboardingLoading }),
-
-  // Focus mode actions
-  setFocusedNode: (focusedNodeId) => set({ focusedNodeId, focusedClusterId: null }),
-  setFocusedCluster: (focusedClusterId) => set({ focusedClusterId, focusedNodeId: null }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
-  clearFocus: () => set({ focusedNodeId: null, focusedClusterId: null, searchQuery: '' }),
 }));

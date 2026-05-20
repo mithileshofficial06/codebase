@@ -12,6 +12,7 @@ if (!process.env.GITHUB_TOKEN) {
   console.error('   Make sure .env file exists at project root with GITHUB_TOKEN set.');
 } else {
   console.log('✓ GitHub token loaded successfully');
+  console.log('  Token preview:', process.env.GITHUB_TOKEN.substring(0, 25) + '...');
 }
 
 import analyzeRouter from './routes/analyze';

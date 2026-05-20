@@ -29,7 +29,6 @@ import ClusterNodeComp from './ClusterNode';
 import { LevelSwitcher } from './GraphControls';
 import { NodeDetail } from './NodeDetail';
 import { OnboardingPanel } from './OnboardingPanel';
-import { FocusMode } from './FocusMode';
 import { GraphSearch } from './GraphSearch';
 import { FlowPanel } from './FlowPanel';
 import { FlowVisualization } from './FlowVisualization';
@@ -591,9 +590,6 @@ function GraphCanvasInner({ nodes: graphNodes, edges: graphEdges }: GraphCanvasP
 
       {/* Onboarding overlay (Architecture view only) */}
       {viewLevel === 'architecture' && <OnboardingPanel />}
-      
-      {/* Focus Mode overlay */}
-      <FocusMode />
       
       {/* Flow Visualization overlay */}
       <FlowVisualization />

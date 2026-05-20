@@ -14,8 +14,6 @@ interface GraphAwareData {
   clusters: ClusterNode[];
   clusterEdges: ClusterEdge[];
   flows: DetectedFlow[];
-  focusedNodeId: string | null;
-  focusedClusterId: string | null;
   activeFlow: DetectedFlow | null;
   viewLevel: string;
   healthMetrics: any;
@@ -63,8 +61,6 @@ export function useChat(graphData: GraphAwareData) {
       graphData.clusters,
       graphData.clusterEdges,
       graphData.flows,
-      graphData.focusedNodeId,
-      graphData.focusedClusterId,
       graphData.activeFlow,
       graphData.viewLevel,
       graphData.healthMetrics

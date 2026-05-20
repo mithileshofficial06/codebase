@@ -18,17 +18,12 @@ function CustomEdgeComponent({
   target,
 }: EdgeProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const focusedNodeId = useGraphStore((s) => s.focusedNodeId);
   const { activeFlow, currentStepIndex, playbackState } = useFlowStore();
 
   const weight = data?.weight || 1;
   const sourceColor = data?.sourceColor || '#4b5563';
   const targetColor = data?.targetColor || '#4b5563';
   const isClusterEdge = data?.isClusterEdge || false;
-
-  // Focus mode logic
-  const isConnectedToFocus = focusedNodeId && (source === focusedNodeId || target === focusedNodeId);
-  const shouldDim = focusedNodeId && !isConnectedToFocus;
   
   // Flow logic
   const isFlowActive = playbackState !== 'idle' && activeFlow;
@@ -62,14 +57,14 @@ function CustomEdgeComponent({
   }
 
   const strokeWidth = isCurrentFlowEdge ? baseWidth + 2 : isHovered ? baseWidth + 1.5 : baseWidth;
-  const opacity = shouldDimFlow ? 0.03 : shouldDim ? 0.05 : isCurrentFlowEdge ? 1 : isHovered ? 1.0 : isClusterEdge ? 0.6 : 0.4;
+  const opacity = shouldDimFlow ? 0.03 : isCurrentFlowEdge ? 1 : isHovered ? 1.0 : isClusterEdge ? 0.6 : 0.4;
 
   const gradientId = `edge-gradient-${id}`;
   const pathId = `edge-path-${id}`;
   const markerId = `edge-marker-${id}`;
 
-  // Show flowing particles on cluster edges always, file edges on hover or when connected to focus or during flow
-  const showParticles = isClusterEdge || isHovered || isConnectedToFocus || isCurrentFlowEdge;
+  // Show flowing particles on cluster edges always, file edges on hover or during flow
+  const showParticles = isClusterEdge || isHovered || isCurrentFlowEdge;
 
   return (
     <g
