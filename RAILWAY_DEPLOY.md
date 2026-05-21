@@ -1,4 +1,15 @@
-# Railway Deployment Guide for CodeMap API
+# Railway Deployment Guide for CodeMap API (Monorepo)
+
+## ⚠️ CRITICAL: Monorepo Configuration
+
+CodeMap is a **Turborepo monorepo** with workspace packages. Railway MUST deploy from the **ROOT**, not from `apps/api`.
+
+### Why?
+- `apps/api` depends on `@codemap/shared` (local workspace package)
+- Railway needs access to the entire monorepo to resolve workspace dependencies
+- Building from `apps/api` alone will fail with: `404 '@codemap/shared@*' is not in this registry`
+
+---
 
 ## Quick Deploy Steps
 
@@ -8,17 +19,46 @@
 2. Click **"New Project"**
 3. Select **"Deploy from GitHub repo"**
 4. Choose your repository: `mithileshofficial06/codemap`
-5. Railway will detect the configuration automatically
 
-### Step 2: Configure Settings
+### Step 2: Configure Settings (CRITICAL)
 
 In Railway project settings:
 
-**Root Directory:** Leave empty (use monorepo root)  
+**Root Directory:** **LEAVE EMPTY** ⚠️ (Must be monorepo root, NOT `apps/api`)  
 **Build Command:** Auto-detected from `nixpacks.toml`  
-**Start Command:** Auto-detected from `nixpacks.toml`
+**Start Command:** Auto-detected from `railway.toml`
 
-### Step 3: Add Environment Variables
+### Step 3: Verify Configuration Files
+
+Railway will use these files from your repository:
+
+**`nixpacks.toml`** (at root):
+```toml
+[phases.setup]
+nixPkgs = ["nodejs-20_x"]
+
+[phases.install]
+cmds = ["npm install"]  # Installs ALL workspace packages
+
+[phases.build]
+cmds = ["npx turbo run build --filter=@codemap/api"]  # Builds only API
+
+[start]
+cmd = "node apps/api/dist/index.js"  # Starts from root
+```
+
+**`railway.toml`** (at root):
+```toml
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "node apps/api/dist/index.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+```
+
+### Step 4: Add Environment Variables
 
 Click **"Variables"** and add:
 
@@ -29,15 +69,16 @@ UPSTASH_REDIS_REST_URL=your_upstash_redis_url_here
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token_here
 PORT=4000
 FRONTEND_URL=https://your-vercel-app.vercel.app
+NODE_ENV=production
 ```
 
-### Step 4: Deploy
+### Step 5: Deploy
 
 1. Click **"Deploy"**
 2. Wait for build to complete (~2-3 minutes)
 3. Railway will provide a URL like: `https://codemap-api-production.up.railway.app`
 
-### Step 5: Update Frontend
+### Step 6: Update Frontend
 
 Go to Vercel and update the environment variable:
 
@@ -51,45 +92,33 @@ Then redeploy the frontend.
 
 ## Troubleshooting
 
-### Error: "failed to compute cache key"
+### Error: "404 '@codemap/shared@*' is not in this registry"
 
-**Cause:** Railway can't find the build configuration
+**Cause:** Railway Root Directory is set to `apps/api` instead of empty (monorepo root)
 
-**Fix:** Make sure `nixpacks.toml` and `railway.toml` are in the repository root
+**Fix:** 
+1. Go to Railway project settings
+2. Find "Root Directory"
+3. **DELETE** the value (leave it empty)
+4. Redeploy
 
 ### Error: "Cannot find module '@codemap/shared'"
 
-**Cause:** Workspace dependencies not installed
+**Cause:** Workspace dependencies not installed correctly
 
-**Fix:** The `nixpacks.toml` should install from root with `npm install`
+**Fix:** Ensure `nixpacks.toml` runs `npm install` from root (not from `apps/api`)
 
-### Error: "Port already in use"
+### Error: "Cannot find module './dist/index.js'"
 
-**Cause:** Railway assigns a dynamic port
+**Cause:** Start command is looking in wrong directory
 
-**Fix:** Make sure your code uses `process.env.PORT`:
-```typescript
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-```
+**Fix:** Start command should be `node apps/api/dist/index.js` (from root), not `cd apps/api && node dist/index.js`
 
-### Error: "CORS policy"
+### Error: "turbo: command not found"
 
-**Cause:** Frontend URL not in CORS whitelist
+**Cause:** Turbo not installed
 
-**Fix:** Update `apps/api/src/index.ts`:
-```typescript
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://your-vercel-app.vercel.app',
-    'https://*.vercel.app'
-  ],
-  credentials: true
-}));
-```
+**Fix:** Ensure root `package.json` has turbo in devDependencies and `npm install` runs from root
 
 ---
 
@@ -106,44 +135,36 @@ curl https://your-railway-url.railway.app/health
 
 ---
 
-## Railway Configuration Files
+## How Monorepo Deployment Works
 
-### `nixpacks.toml` (Root)
-```toml
-[phases.setup]
-nixPkgs = ["nodejs-20_x"]
-
-[phases.install]
-cmds = ["npm install"]
-
-[phases.build]
-cmds = ["npx turbo run build --filter=@codemap/api"]
-
-[start]
-cmd = "cd apps/api && node dist/index.js"
 ```
-
-### `railway.toml` (Root)
-```toml
-[build]
-builder = "NIXPACKS"
-
-[deploy]
-startCommand = "cd apps/api && node dist/index.js"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
+1. Railway clones entire repository
+   ↓
+2. Runs from ROOT (not apps/api)
+   ↓
+3. npm install (installs all workspace packages)
+   ├── apps/api/node_modules
+   ├── apps/web/node_modules
+   └── packages/shared (resolved as workspace)
+   ↓
+4. npx turbo run build --filter=@codemap/api
+   ├── Builds @codemap/shared first (dependency)
+   └── Builds @codemap/api
+   ↓
+5. node apps/api/dist/index.js
+   └── Starts Express server
 ```
 
 ---
 
-## Alternative: Manual Configuration
+## Manual Configuration (If Auto-Detection Fails)
 
-If auto-detection doesn't work:
+If Railway doesn't detect the configuration:
 
-1. **Root Directory:** `/` (monorepo root)
+1. **Root Directory:** Leave empty (monorepo root)
 2. **Build Command:** `npm install && npx turbo run build --filter=@codemap/api`
-3. **Start Command:** `cd apps/api && node dist/index.js`
-4. **Watch Paths:** `apps/api/**`
+3. **Start Command:** `node apps/api/dist/index.js`
+4. **Watch Paths:** `apps/api/**`, `packages/shared/**`
 
 ---
 
@@ -158,18 +179,40 @@ If auto-detection doesn't work:
 **After Free Trial:**
 - ~$5-10/month for small API
 - Pay-as-you-go pricing
-- No credit card required for trial
+
+---
+
+## Workspace Structure
+
+```
+codemap/                          ← Railway deploys from HERE
+├── package.json                  ← Workspace configuration
+├── nixpacks.toml                 ← Build configuration
+├── railway.toml                  ← Deploy configuration
+├── turbo.json                    ← Turborepo config
+├── apps/
+│   └── api/                      ← Backend code
+│       ├── package.json          ← Depends on @codemap/shared
+│       ├── src/
+│       └── dist/                 ← Build output
+└── packages/
+    └── shared/                   ← Workspace package
+        ├── package.json          ← name: "@codemap/shared"
+        └── types/
+```
 
 ---
 
 ## Next Steps
 
-1. ✅ Deploy API to Railway
-2. ✅ Copy Railway URL
-3. ✅ Update Vercel environment variable
-4. ✅ Redeploy frontend
-5. ✅ Test full application
+1. ✅ Ensure Root Directory is EMPTY in Railway
+2. ✅ Deploy from monorepo root
+3. ✅ Verify workspace packages resolve
+4. ✅ Copy Railway URL
+5. ✅ Update Vercel environment variable
+6. ✅ Test full application
 
 ---
 
-**Last Updated:** May 21, 2026
+**Last Updated:** May 21, 2026  
+**Monorepo:** Turborepo + npm workspaces

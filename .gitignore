@@ -28,7 +28,6 @@ pnpm-debug.log*
 
 # local env files
 .env
-.env.example
 .env*.local
 .env.development
 .env.test

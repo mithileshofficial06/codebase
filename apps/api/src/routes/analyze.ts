@@ -5,7 +5,7 @@ import { buildGraph } from '../services/graphBuilder';
 import { calculateHealth } from '../services/healthScore';
 import { ProgressEmitter } from '../sse/progress';
 import { getCache, setCache } from '../cache/redis';
-import { RepoData } from '@codemap/shared';
+import { RepoData } from '../types';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { SSEProgressEvent, SSEStepId } from '@codemap/shared';
+import { SSEProgressEvent, SSEStepId } from '../types';
 
 export class ProgressEmitter {
   private heartbeatInterval: NodeJS.Timeout | null = null;

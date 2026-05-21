@@ -1,4 +1,4 @@
-import { GraphNode, GraphEdge, FileType } from '@codemap/shared';
+import { GraphNode, GraphEdge, FileType } from '../types';
 import { ParsedModule } from './parser';
 
 // ── Map file extension to FileType ───────────────────────────────

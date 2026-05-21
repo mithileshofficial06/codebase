@@ -2,10 +2,13 @@
 nixPkgs = ["nodejs-20_x"]
 
 [phases.install]
+# Install from monorepo root to resolve workspace packages
 cmds = ["npm install"]
 
 [phases.build]
+# Build only the API using Turborepo workspace filtering
 cmds = ["npx turbo run build --filter=@codemap/api"]
 
 [start]
-cmd = "cd apps/api && node dist/index.js"
+# Start the API from the built output
+cmd = "node apps/api/dist/index.js"

@@ -9,11 +9,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "paths": {
-      "@codemap/shared": ["../../packages/shared/types"]
-    }
+    "moduleResolution": "node"
   },
-  "include": ["src/**/*", "../../packages/shared/types/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
+

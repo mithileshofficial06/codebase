@@ -1,4 +1,4 @@
-import { GraphNode, GraphEdge, HealthScore, HealthMetric } from '@codemap/shared';
+import { GraphNode, GraphEdge, HealthScore, HealthMetric } from '../types';
 
 // ── Main health calculation ──────────────────────────────────────
 
