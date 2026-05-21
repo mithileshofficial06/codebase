@@ -510,86 +510,130 @@ export default function Home() {
         <div className="glow-separator" />
 
         {/* ═══ HOW IT WORKS ═══ */}
-        <section id="how-it-works" className="py-28 px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-16 fade-up">
-              <div className="section-badge" style={{ margin: '0 auto 1.25rem' }}>How it works</div>
-              <h2 className="text-3xl md:text-4xl tracking-[-0.03em] mb-3" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff' }}>Three steps to clarity</h2>
-              <p style={{ color: '#94A3B8', maxWidth: 420, margin: '0 auto', fontSize: '0.95rem' }}>From URL to full understanding in under 30 seconds.</p>
+        <section id="how-it-works" className="py-32 px-6">
+          <div className="max-w-3xl mx-auto">
+
+            {/* Section Header */}
+            <div className="text-center mb-20 fade-up">
+              <p style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: '0.2em',
+                color: '#444444', textTransform: 'uppercase', marginBottom: 12,
+              }}>How it works</p>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.04em] mb-4"
+                style={{ fontFamily: 'var(--font-heading)' }}>
+                <span style={{ fontWeight: 300, color: '#aaaaaa' }}>Three steps to </span>
+                <span style={{ fontWeight: 800, color: '#ffffff' }}>clarity</span>
+              </h2>
+              <p style={{ color: '#555555', maxWidth: 400, margin: '0 auto', fontSize: 15, lineHeight: 1.7 }}>
+                From URL to full understanding in under 30 seconds.
+              </p>
             </div>
 
-            <div className="steps-container fade-up" style={{ transitionDelay: '100ms' }}>
+            {/* Timeline */}
+            <div className="hiw-timeline fade-up">
               {[
                 {
-                  n: '01', h: 'Paste a URL', p: 'Any public GitHub repository. No install, no signup, no config.',
-                  color: '#A78BFA', bg: 'rgba(168,85,247,0.06)',
-                  icon: (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                    </svg>
-                  ),
+                  n: '01', title: 'Paste a URL',
+                  desc: 'Any public GitHub repository. No install, no signup, no config files.',
+                  color: '#A78BFA',
+                  icon: <Link2 size={18} color="#A78BFA" strokeWidth={1.5} />,
                 },
                 {
-                  n: '02', h: 'Explore the map', p: 'Files as nodes, imports as edges. Navigate your codebase visually.',
-                  color: '#2DD4BF', bg: 'rgba(0,217,255,0.06)',
-                  icon: (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2DD4BF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                      <line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" />
-                    </svg>
-                  ),
+                  n: '02', title: 'Explore the map',
+                  desc: 'Files become nodes, imports become edges. Navigate your codebase visually.',
+                  color: '#2DD4BF',
+                  icon: <Map size={18} color="#2DD4BF" strokeWidth={1.5} />,
                 },
                 {
-                  n: '03', h: 'Ask anything', p: 'AI-powered chat that references your actual code and dependencies.',
-                  color: '#f59e0b', bg: 'rgba(245,158,11,0.06)',
-                  icon: (
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      <line x1="9" y1="10" x2="9" y2="10" /><line x1="12" y1="10" x2="12" y2="10" /><line x1="15" y1="10" x2="15" y2="10" />
-                    </svg>
-                  ),
+                  n: '03', title: 'Ask anything',
+                  desc: 'AI-powered chat that references your actual code and dependencies — not generic advice.',
+                  color: '#6366F1',
+                  icon: <MessageCircle size={18} color="#6366F1" strokeWidth={1.5} />,
                 },
-              ].map((c, i) => (
-                <div key={i} className="step-card" style={{ '--step-color': c.color, '--step-bg': c.bg } as React.CSSProperties}>
-                  {/* Connector line between cards */}
-                  {i < 2 && <div className="step-connector"><div className="step-connector-line" /></div>}
-
-                  {/* Step number watermark */}
-                  <span className="step-number">{c.n}</span>
-
-                  {/* Icon */}
-                  <div className="step-icon">{c.icon}</div>
+              ].map((step, i) => (
+                <div key={i} className="hiw-step">
+                  {/* Dot + line */}
+                  <div className="hiw-dot-col">
+                    <div className="hiw-dot" style={{ borderColor: step.color, boxShadow: `0 0 12px ${step.color}25` }} />
+                    {i < 2 && <div className="hiw-line" />}
+                  </div>
 
                   {/* Content */}
-                  <h3 className="step-title">{c.h}</h3>
-                  <p className="step-desc">{c.p}</p>
-
-                  {/* Bottom accent bar */}
-                  <div className="step-accent" />
+                  <div className="hiw-content">
+                    <div className="hiw-icon-pill" style={{ background: `${step.color}12`, borderColor: `${step.color}25` }}>
+                      {step.icon}
+                    </div>
+                    <div>
+                      <span className="hiw-number">{step.n}</span>
+                      <h3 className="hiw-title">{step.title}</h3>
+                      <p className="hiw-desc">{step.desc}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
+
           </div>
         </section>
 
         <div className="glow-separator" />
 
         {/* ═══ BOTTOM CTA ═══ */}
-        <section className="py-28 px-6 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, rgba(45, 212, 191, 0.03) 40%, transparent 70%)' }} />
+        <section className="py-32 px-6 relative">
           <div className="max-w-2xl mx-auto text-center fade-up relative z-10">
-            <h2 className="text-3xl md:text-4xl tracking-[-0.03em] mb-4" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff' }}>Ready to map your codebase?</h2>
-            <p style={{ color: '#94A3B8', marginBottom: '2rem', fontSize: '1rem' }}>Free forever for public repositories.</p>
-            <div className="hero-input-box mb-2" style={{ maxWidth: 480, margin: '0 auto' }}>
-              <input type="text" placeholder="github.com/vercel/next.js" spellCheck={false} autoComplete="off"
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit((e.target as HTMLInputElement).value); }} />
-              <button className="analyze-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Analyze repo →</button>
+
+            <p style={{
+              fontSize: 11, fontWeight: 600, letterSpacing: '0.2em',
+              color: '#444444', textTransform: 'uppercase', marginBottom: 16,
+            }}>Get started</p>
+
+            <h2 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.04em] mb-4"
+              style={{ fontFamily: 'var(--font-heading)' }}>
+              <span style={{ fontWeight: 300, color: '#aaaaaa' }}>Ready to map your </span>
+              <span style={{ fontWeight: 800, color: '#ffffff' }}>codebase?</span>
+            </h2>
+
+            <p style={{ color: '#555555', fontSize: 15, lineHeight: 1.7, marginBottom: 40 }}>
+              Free forever for public repositories. No signup required.
+            </p>
+
+            <div style={{ maxWidth: 480, margin: '0 auto 20px' }}>
+              <div className="hero-input-minimal">
+                <input
+                  type="text"
+                  placeholder="github.com/vercel/next.js"
+                  spellCheck={false}
+                  autoComplete="off"
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit((e.target as HTMLInputElement).value); }}
+                />
+                <button
+                  className="hero-arrow-btn"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                  <ArrowRight size={16} color="#ffffff" />
+                </button>
+              </div>
             </div>
-            <p style={{ fontSize: '0.72rem', color: '#64748B', marginBottom: '1.5rem' }}>No signup required · Free for public repos</p>
-            <div className="flex justify-center gap-3 flex-wrap">
-              <button className="btn-secondary">View on GitHub <ArrowRight size={14} /></button>
-            </div>
+
+            <p style={{
+              fontSize: 12, color: '#444444', letterSpacing: '0.02em', marginBottom: 32,
+            }}>
+              50+ languages<span className="mx-3">·</span>Zero setup<span className="mx-3">·</span>Free for public repos
+            </p>
+
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2"
+              style={{
+                fontSize: 13, color: '#555555', textDecoration: 'none',
+                transition: 'color 0.2s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#aaaaaa')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#555555')}>
+              View on GitHub <ArrowRight size={14} />
+            </a>
+
           </div>
         </section>
 
