@@ -18,12 +18,12 @@ export default function AnimatedBackground() {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x020205, 1); // Very dark background
+    renderer.setClearColor(0x06060f, 1); // Deep indigo-black background
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.4;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020205, 0.02);
+    scene.fog = new THREE.FogExp2(0x06060f, 0.012);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0, 10);
@@ -33,11 +33,11 @@ export default function AnimatedBackground() {
 
     // Material - Dark glassy/metallic to reflect intense colored lights
     const material = new THREE.MeshPhysicalMaterial({
-      color: 0x000000,
+      color: 0x050510,
       metalness: 1.0,
-      roughness: 0.15,
+      roughness: 0.1,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
+      clearcoatRoughness: 0.05,
     });
 
     // Shapes - Massive overlapping toruses to simulate sweeping fluid surfaces
@@ -68,27 +68,27 @@ export default function AnimatedBackground() {
     toruses.push({ mesh: mesh3, rx: 0.0002, ry: -0.0001 });
 
     // Lights
-    scene.add(new THREE.AmbientLight(0x051020, 1.0)); // Deep blue ambient
+    scene.add(new THREE.AmbientLight(0x0a0520, 1.8)); // Deep violet ambient
 
-    // Intense Blue/Cyan from top left
-    const light1 = new THREE.DirectionalLight(0x0066ff, 5.0);
+    // Soft Violet from top left
+    const light1 = new THREE.DirectionalLight(0x8B5CF6, 6.5);
     light1.position.set(-10, 10, 5);
     scene.add(light1);
 
-    // Deep Violet from bottom left
-    const light2 = new THREE.DirectionalLight(0x6c3fc7, 3.0);
+    // Deep Indigo from bottom left
+    const light2 = new THREE.DirectionalLight(0x6366F1, 4.5);
     light2.position.set(-10, -10, 0);
     scene.add(light2);
 
-    // Sharp Copper/Amber highlight from bottom right, aimed at center
-    const light3 = new THREE.SpotLight(0xff7722, 10.0, 50, Math.PI/6, 0.5, 1);
+    // Warm teal highlight from bottom right
+    const light3 = new THREE.SpotLight(0x2DD4BF, 12.0, 50, Math.PI/6, 0.5, 1);
     light3.position.set(10, -5, 5);
     light3.target.position.set(0, 0, -5);
     scene.add(light3);
     scene.add(light3.target);
 
-    // Cyan rim light from top right
-    const light4 = new THREE.DirectionalLight(0x00d9ff, 2.0);
+    // Teal rim light from top right
+    const light4 = new THREE.DirectionalLight(0x2DD4BF, 3.5);
     light4.position.set(10, 10, -5);
     scene.add(light4);
 

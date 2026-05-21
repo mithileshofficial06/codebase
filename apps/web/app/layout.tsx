@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
-import { Outfit, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Urbanist, Lexend, Overpass_Mono } from 'next/font/google';
 import './globals.css';
 import dynamic from 'next/dynamic';
 
 const AnimatedBackground = dynamic(() => import('@/components/AnimatedBackground'), { ssr: false });
 
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' });
-const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
-const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
+const urbanist = Urbanist({ subsets: ['latin'], variable: '--font-urbanist', display: 'swap' });
+const lexend = Lexend({ subsets: ['latin'], variable: '--font-lexend', display: 'swap' });
+const overpassMono = Overpass_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'CodeMap — Understand Any Codebase',
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${jakarta.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${urbanist.variable} ${lexend.variable} ${overpassMono.variable}`}>
       <body className="font-sans antialiased">
         <AnimatedBackground />
         <div className="grain-overlay" aria-hidden="true">
