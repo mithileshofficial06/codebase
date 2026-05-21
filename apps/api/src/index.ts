@@ -3,8 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env FIRST before importing other modules
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Load .env FIRST before importing other modules (dev only)
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+}
 
 // Verify GitHub token is loaded
 if (!process.env.GITHUB_TOKEN) {
