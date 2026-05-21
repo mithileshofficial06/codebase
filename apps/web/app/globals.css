@@ -538,51 +538,37 @@ body {
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .cursor-blink { animation: blink 1s step-end infinite; }
 
-/* ═══ Hero Input — Borderless Glow Underline ═══ */
-.hero-input-glow {
-  display: flex; align-items: center; gap: 0.75rem;
+/* ═══ Hero Input — Minimal Borderless ═══ */
+.hero-input-minimal {
+  display: flex; align-items: center;
   width: 100%;
-  padding: 0.75rem 0;
-  border: none;
-  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
-  background: transparent;
   position: relative;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid #222222;
+  transition: border-color 300ms ease, box-shadow 300ms ease;
 }
-.hero-input-glow::after {
-  content: '';
-  position: absolute; bottom: -1px; left: 50%; right: 50%;
-  height: 2px;
-  background: linear-gradient(90deg, var(--purple), var(--cyan));
-  border-radius: 2px;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  opacity: 0;
+.hero-input-minimal:focus-within {
+  border-image: linear-gradient(90deg, #6366f1, #a78bfa) 1;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
 }
-.hero-input-glow:focus-within::after {
-  left: 0; right: 0; opacity: 1;
-  box-shadow: 0 4px 24px rgba(139, 92, 246, 0.15), 0 2px 48px rgba(45, 212, 191, 0.08);
-}
-.hero-input-glow input {
+.hero-input-minimal input {
   flex: 1; background: transparent; border: none; outline: none;
-  color: var(--text-primary); font-family: var(--font-code);
-  font-size: 0.95rem; padding: 0.5rem 0;
-  letter-spacing: 0.01em;
+  font-family: var(--font-code); font-size: 14px; color: #888888;
+  padding: 12px 0; width: 100%;
 }
-.hero-input-glow input::placeholder {
-  color: rgba(107, 122, 153, 0.5);
-  transition: opacity 0.3s ease;
+.hero-input-minimal input::placeholder { color: #333333; }
+.hero-arrow-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: #111111;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 300ms ease;
+  flex-shrink: 0;
 }
-.hero-input-glow:focus-within input::placeholder { opacity: 0.3; }
-.hero-input-btn {
-  padding: 0.6rem 1.25rem; border: none; cursor: pointer;
-  background: linear-gradient(135deg, var(--purple), var(--cyan));
-  color: #fff; font-weight: 600; font-size: 0.82rem;
-  white-space: nowrap; border-radius: 10px;
-  transition: all 0.25s ease;
-  box-shadow: 0 0 20px var(--glow-purple);
+.hero-arrow-btn.valid {
+  background: linear-gradient(135deg, #6366f1, #a78bfa);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
 }
-.hero-input-btn:hover { transform: translateY(-1px); box-shadow: 0 0 32px rgba(139, 92, 246, 0.3); }
-.hero-input-btn:disabled { opacity: 0.2; cursor: default; transform: none; box-shadow: none; }
+.hero-arrow-btn:disabled { cursor: default; opacity: 0.5; }
 
 /* ═══ Mini Graph ═══ */
 .mini-graph { overflow: visible; }
@@ -616,17 +602,7 @@ body {
   100% { stroke-dashoffset: -20; }
 }
 
-/* ═══ Scroll Indicator ═══ */
-.scroll-indicator {
-  animation: scrollBob 2s ease-in-out infinite;
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-.scroll-indicator:hover { opacity: 1; }
-@keyframes scrollBob {
-  0%, 100% { transform: translate(-50%, 0); }
-  50% { transform: translate(-50%, 6px); }
-}
+
 
 /* ═══ Mobile ═══ */
 @media (max-width: 768px) {

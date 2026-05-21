@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Link2, Map, MessageCircle, Zap, Shield, BarChart3, ArrowRight } from 'lucide-react';
+import { Link2, Map, MessageCircle, Zap, Shield, BarChart3, ArrowRight, ChevronDown } from 'lucide-react';
 
 type PageState = 'landing' | 'transitioning';
 
@@ -282,56 +282,114 @@ export default function Home() {
     <>
 
       <StickyNav />
-      <main className="relative z-10 w-full overflow-hidden" style={{ paddingTop: 64 }}>
+      <main className="relative z-10 w-full overflow-hidden">
 
-        {/* ═══ HERO — Centered Premium ═══ */}
-        <section className="min-h-screen flex flex-col items-center justify-center px-6 relative">
-          {/* Background glow orbs */}
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(45, 212, 191, 0.04) 40%, transparent 65%)' }} />
+        {/* ═══ HERO ═══ */}
+        <section className="min-h-screen flex flex-col items-center justify-center px-6 relative" style={{ paddingTop: 80 }}>
 
           <AnimatePresence mode="wait">
             {state === 'landing' && (
               <motion.div key="hero" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.5 }}
                 className="w-full flex flex-col items-center text-center relative z-10">
 
-                {/* ── Headline — Poster style ── */}
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="mb-6">
-                  <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.08] tracking-[-0.04em]" style={{ fontFamily: 'var(--font-heading)' }}>
-                    <span style={{ fontWeight: 300, color: 'rgba(238,238,248,0.9)' }}>See the architecture of</span><br />
-                    <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl" style={{ fontWeight: 900, color: '#EEEEF8' }}>any codebase</span>
-                    <span style={{ fontWeight: 300, color: 'rgba(238,238,248,0.7)' }}> — </span>
-                    <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl gradient-text-accent" style={{ fontWeight: 900 }}>instantly.</span>
+                {/* 1. CODEMAP eyebrow */}
+                <motion.p
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    fontSize: 11, fontWeight: 500, letterSpacing: '0.25em',
+                    color: '#555555', textTransform: 'uppercase' as const, textAlign: 'center' as const,
+                    marginBottom: 16,
+                  }}>
+                  CODEMAP
+                </motion.p>
+
+                {/* 2. Headline */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="mb-6 w-full"
+                  style={{ maxWidth: 900, margin: '0 auto' }}>
+                  <h1 style={{ fontFamily: 'var(--font-heading)', textAlign: 'center' }}>
+                    {/* Line 1 — quiet */}
+                    <span className="block text-3xl sm:text-4xl md:text-5xl leading-[1.15] tracking-[-0.03em]"
+                      style={{ fontWeight: 300, color: '#aaaaaa' }}>
+                      See the architecture of
+                    </span>
+                    {/* Line 2 — heavy */}
+                    <span className="block text-5xl sm:text-6xl md:text-7xl leading-[1.05] tracking-[-0.04em] mt-1">
+                      <span style={{ fontWeight: 900, color: '#ffffff' }}>any codebase</span>
+                      <span style={{ fontWeight: 300, color: '#333333' }}> — </span>
+                      <span style={{
+                        fontWeight: 900,
+                        color: 'transparent',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #6366f1 100%)',
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                      }}>instantly.</span>
+                    </span>
                   </h1>
                 </motion.div>
 
-                {/* ── Subtitle ── */}
-                <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.6 }}
-                  className="text-base md:text-lg mb-10 max-w-lg" style={{ color: '#A0AECB', lineHeight: 1.7 }}>
+                {/* 3. Subtitle */}
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                  style={{
+                    fontSize: 15, color: '#555555', lineHeight: 1.7, fontWeight: 400,
+                    maxWidth: 480, margin: '0 auto', textAlign: 'center',
+                    marginBottom: 40,
+                  }}>
                   Paste a GitHub URL and get an interactive dependency graph, health scoring, and AI&#8209;powered code analysis in seconds.
                 </motion.p>
 
-                {/* ── Input — borderless glow underline ── */}
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}
-                  className="w-full max-w-xl mb-4">
-                  <div className="hero-input-glow">
-                    <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)}
+                {/* 4. URL Input — borderless */}
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.65, duration: 0.5 }}
+                  style={{ width: '100%', maxWidth: 560, margin: '0 auto', marginBottom: 24 }}>
+                  <div className="hero-input-minimal">
+                    <input
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSubmit(inputValue)}
-                      placeholder="github.com/vercel/next.js" spellCheck={false} autoComplete="off" />
-                    <button className="hero-input-btn" disabled={!isValid} onClick={() => handleSubmit(inputValue)}>Analyze →</button>
+                      placeholder="github.com/vercel/next.js"
+                      spellCheck={false}
+                      autoComplete="off"
+                    />
+                    <button
+                      className={`hero-arrow-btn ${isValid ? 'valid' : ''}`}
+                      disabled={!isValid}
+                      onClick={() => handleSubmit(inputValue)}>
+                      <ArrowRight size={16} color="#ffffff" />
+                    </button>
                   </div>
                 </motion.div>
 
-                {/* ── Inline stats ── */}
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45, duration: 0.5 }}
-                  className="text-xs md:text-sm tracking-wide mb-12" style={{ color: '#6B7A99' }}>
-                  50+ languages &nbsp;·&nbsp; Zero setup &nbsp;·&nbsp; Free for public repos
+                {/* 5. Stats line */}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.5 }}
+                  style={{
+                    fontSize: 12, color: '#444444', textAlign: 'center',
+                    letterSpacing: '0.02em', marginBottom: 48,
+                  }}>
+                  50+ languages<span className="mx-3">·</span>Zero setup<span className="mx-3">·</span>Free for public repos
                 </motion.p>
 
-                {/* ── Mini Graph Preview ── */}
-                <motion.div initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.5, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-full max-w-2xl relative">
-                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(139,92,246,0.06) 0%, transparent 70%)' }} />
+                {/* Mini Graph Preview */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.9, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full relative"
+                  style={{ maxWidth: 700 }}>
                   <MiniGraphPreview />
                 </motion.div>
 
@@ -339,13 +397,18 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          {/* ── Scroll indicator ── */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 scroll-indicator">
-            <span style={{ fontSize: '0.6rem', color: '#6B7A99', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Scroll</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7A99" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
+          {/* 8. Scroll indicator */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2, duration: 0.6 }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2">
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
+              <ChevronDown size={20} color="#333333" />
+            </motion.div>
+          </motion.div>
         </section>
 
         <div className="glow-separator" />
