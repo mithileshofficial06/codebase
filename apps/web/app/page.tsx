@@ -244,7 +244,7 @@ export default function Home() {
                 {/* Left — Text */}
                 <div className="flex-1 max-w-xl">
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.08] tracking-[-0.04em] mb-5" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-[1.08] tracking-[-0.04em] mb-5" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>
                       <span className="gradient-text">Understand any</span><br />
                       <span className="gradient-text-accent">codebase</span>{' '}
                       <span className="gradient-text">instantly</span>

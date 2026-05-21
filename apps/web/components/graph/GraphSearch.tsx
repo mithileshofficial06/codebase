@@ -18,7 +18,7 @@ export function GraphSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { nodes, clusters, viewLevel } = useGraphStore();
-  const { setFocusedNode, setFocusedCluster, setSearchQuery } = useGraphStore();
+  const { setSearchQuery } = useGraphStore();
   const { fitView, getNode } = useReactFlow();
 
   // Keyboard shortcut: Cmd/Ctrl + K
@@ -95,12 +95,6 @@ export function GraphSearch() {
 
   const handleSelect = (result: typeof results[0]) => {
     setSearchQuery(query);
-    
-    if (result.type === 'cluster') {
-      setFocusedCluster(result.id);
-    } else {
-      setFocusedNode(result.id);
-    }
 
     // Zoom to node
     setTimeout(() => {

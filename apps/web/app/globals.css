@@ -414,8 +414,11 @@ body {
 }
 .chat-chips {
   display: flex; gap: 0.35rem; padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.chat-chips::-webkit-scrollbar { display: none; }
 .chat-chip {
   background: transparent; border: 1px solid var(--border); border-radius: 999px;
   padding: 0.25rem 0.7rem; font-size: 0.65rem; font-weight: 500;
@@ -506,7 +509,7 @@ body {
 
 /* ═══ Stats Cards ═══ */
 .stats-inline {
-  display: flex; gap: 0.75rem; margin-top: 0;
+  display: flex; gap: 0.75rem; margin-top: 0; flex-wrap: wrap;
 }
 .stat-card {
   display: flex; align-items: center; gap: 0.6rem;
@@ -534,6 +537,7 @@ body {
   .bento-card.featured { grid-column: span 1; }
   .stats-inline { gap: 1.5rem; }
   .site-nav { padding: 0 1rem; }
+  .nav-links { display: none; }
   .hero-input-box { flex-direction: column; }
   .hero-input-box .analyze-btn { width: 100%; text-align: center; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
