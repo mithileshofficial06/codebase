@@ -285,7 +285,7 @@ export default function Home() {
       <main className="relative z-10 w-full overflow-hidden">
 
         {/* ═══ HERO ═══ */}
-        <section className="min-h-screen flex flex-col items-center justify-center px-6 relative" style={{ paddingTop: 80 }}>
+        <section className="min-h-screen flex flex-col items-center justify-center px-6 relative pt-40 pb-20">
 
           <AnimatePresence mode="wait">
             {state === 'landing' && (
@@ -297,10 +297,11 @@ export default function Home() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="text-2xl sm:text-3xl md:text-4xl gradient-text-accent"
                   style={{
-                    fontSize: 11, fontWeight: 500, letterSpacing: '0.25em',
-                    color: '#555555', textTransform: 'uppercase' as const, textAlign: 'center' as const,
-                    marginBottom: 16,
+                    fontWeight: 900, letterSpacing: '0.15em',
+                    textTransform: 'uppercase' as const, textAlign: 'center' as const,
+                    marginBottom: 24,
                   }}>
                   CODEMAP
                 </motion.p>
@@ -413,45 +414,96 @@ export default function Home() {
 
         <div className="glow-separator" />
 
-        {/* ═══ BENTO FEATURES ═══ */}
-        <section id="features" className="py-28 px-6">
+        {/* ═══ FEATURES ═══ */}
+        <section id="features" className="py-32 px-6">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-14 fade-up">
-              <div className="section-badge" style={{ margin: '0 auto 1.25rem' }}><Zap size={12} /> Features</div>
-              <h2 className="text-3xl md:text-4xl tracking-[-0.03em] mb-3" style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff' }}>Everything you need to explore code</h2>
-              <p style={{ color: '#94A3B8', maxWidth: 500, margin: '0 auto' }}>Powerful tools that help you understand, navigate, and analyze any repository.</p>
+
+            {/* Section Header */}
+            <div className="text-center mb-20 fade-up">
+              <p style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: '0.2em',
+                color: '#444444', textTransform: 'uppercase', marginBottom: 12,
+              }}>Features</p>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.04em] mb-4"
+                style={{ fontFamily: 'var(--font-heading)' }}>
+                <span style={{ fontWeight: 300, color: '#aaaaaa' }}>Everything you need to </span>
+                <span style={{ fontWeight: 800, color: '#ffffff' }}>explore code</span>
+              </h2>
+              <p style={{ color: '#555555', maxWidth: 460, margin: '0 auto', fontSize: 15, lineHeight: 1.7 }}>
+                Powerful tools that help you understand, navigate, and analyze any repository.
+              </p>
             </div>
 
-            <div className="bento-grid fade-up" style={{ transitionDelay: '100ms' }}>
-              <div className="bento-card featured">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}><Map size={18} color="#A78BFA" strokeWidth={1.5} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem' }}>See the full picture instantly</h3>
+            {/* Feature 1 — Dependency Graph */}
+            <div className="feature-row fade-up">
+              <div className="feature-text">
+                <span className="feature-number">01</span>
+                <div className="feature-icon-pill" style={{ background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.15)' }}>
+                  <Map size={18} color="#A78BFA" strokeWidth={1.5} />
                 </div>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>A live dependency graph built from real import analysis — every file, every edge, instantly.</p>
+                <h3 className="feature-title">Interactive dependency graph</h3>
+                <p className="feature-desc">
+                  A live graph built from real import analysis — every file is a node, every import an edge. Navigate your entire codebase visually and understand how things connect.
+                </p>
+              </div>
+              <div className="feature-visual">
                 <FeatureGraphSVG />
               </div>
-              <div className="bento-card">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: 'rgba(0,217,255,0.08)', border: '1px solid rgba(0,217,255,0.15)' }}><BarChart3 size={18} color="#2DD4BF" strokeWidth={1.5} /></div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem' }}>Health Scoring</h3>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>Coupling, complexity, and churn distilled into one score.</p>
-                <div className="flex justify-center"><HealthScoreRing score={74} /></div>
+            </div>
+
+            {/* Feature 2 — Health Score */}
+            <div className="feature-row reversed fade-up">
+              <div className="feature-text">
+                <span className="feature-number">02</span>
+                <div className="feature-icon-pill" style={{ background: 'rgba(45,212,191,0.08)', borderColor: 'rgba(45,212,191,0.15)' }}>
+                  <BarChart3 size={18} color="#2DD4BF" strokeWidth={1.5} />
+                </div>
+                <h3 className="feature-title">Health scoring</h3>
+                <p className="feature-desc">
+                  Coupling, complexity, and code churn distilled into a single actionable score. Instantly know the overall quality and maintainability of any repository.
+                </p>
               </div>
-              <div className="bento-card">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)' }}><Shield size={18} color="#f87171" strokeWidth={1.5} /></div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem' }}>Know what&#39;s risky before you touch it</h3>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1rem' }}>Hotspot detection surfaces files changed most often — where bugs cluster and changes cascade.</p>
+              <div className="feature-visual">
+                <div className="flex justify-center items-center" style={{ minHeight: 200 }}>
+                  <HealthScoreRing score={74} />
+                </div>
+              </div>
+            </div>
+
+            {/* Feature 3 — Hotspot Detection */}
+            <div className="feature-row fade-up">
+              <div className="feature-text">
+                <span className="feature-number">03</span>
+                <div className="feature-icon-pill" style={{ background: 'rgba(248,113,113,0.08)', borderColor: 'rgba(248,113,113,0.15)' }}>
+                  <Shield size={18} color="#f87171" strokeWidth={1.5} />
+                </div>
+                <h3 className="feature-title">Hotspot detection</h3>
+                <p className="feature-desc">
+                  Surface the files changed most frequently — where bugs cluster and changes cascade. Know what&apos;s risky before you touch it.
+                </p>
+              </div>
+              <div className="feature-visual">
                 <HotspotVisual />
               </div>
-              <div className="bento-card featured">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)' }}><MessageCircle size={18} color="#A78BFA" strokeWidth={1.5} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '1.05rem' }}>Ask your codebase anything</h3>
+            </div>
+
+            {/* Feature 4 — AI Chat */}
+            <div className="feature-row reversed fade-up">
+              <div className="feature-text">
+                <span className="feature-number">04</span>
+                <div className="feature-icon-pill" style={{ background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.15)' }}>
+                  <MessageCircle size={18} color="#A78BFA" strokeWidth={1.5} />
                 </div>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>Powered by Gemini. Answers reference real file names and dependency relationships — not generic advice.</p>
+                <h3 className="feature-title">Ask your codebase anything</h3>
+                <p className="feature-desc">
+                  Powered by Gemini. Answers reference real file names and dependency relationships — not generic advice. Like having a senior engineer who knows every line.
+                </p>
+              </div>
+              <div className="feature-visual">
                 <ChatPreview />
               </div>
             </div>
+
           </div>
         </section>
 
