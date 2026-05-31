@@ -1,4 +1,4 @@
-# CodeMap - Project Report
+    # CodeMap - Project Report
 
 **Project Name:** CodeMap - Intelligent Codebase Visualization Platform  
 **Version:** 1.0.0  
